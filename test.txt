@@ -28,4 +28,4 @@ return (#fo12+#ba12 *#ca23 [#ba12])/- #fo12;
 }
 // note that functions are defined using a statement
 int #ma11(int #aa11, #bb11)
-if (#aa11>#bb11) return #aa11; else return #bb11;
+if (#aa11 .gt #bb11) return #aa11; else return #bb11;
