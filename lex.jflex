@@ -4,16 +4,16 @@ LETTER = [a-zA-Z]
 WDIGIT = [0-9]
 NDIGIT = [1-9]
 LETWDIGIT = (LETTER | WDIGIT)
-NUMCONST = ("0" | (NDIGIT)(WDIGIT)*)
 CHARCONST = \\([A-Za-mo-z1-9\\])
 COMMENT = "//"(.)*
-/* WHITESPACE = (" "|\\(r|t))+ */
-WHITESPACE = "\r"
+SHARP = "#"
+WHITESPACE = [ \t\n\r] 
 RECORD = "record"
 OPEN_BRACE = "{"
 CLOSE_BRACE = "}"
 SEMICOLON = ";"
 COMMA = ","
+DOT = "."
 OPEN_BRACKET = "["
 CLOSE_BRACKET = "]"
 STATIC = "static"
@@ -62,6 +62,7 @@ MATHPLU = "+"
 {CLOSE_BRACE} {System.out.println("} seen!  " + yytext());}
 {SEMICOLON} {System.out.println("; seen!  " + yytext());}
 {COMMA} {System.out.println(", seen!  " + yytext());}
+{DOT} {System.out.println(". seen!  " + yytext());}
 {OPEN_BRACKET} {System.out.println("[ seen!  " + yytext());}
 {CLOSE_BRACKET} {System.out.println("] seen!  " + yytext());}
 {STATIC} {System.out.println("static KW seen!  " + yytext());}
@@ -102,9 +103,10 @@ MATHPLU = "+"
 {MATHMOD} {System.out.println("% seen!  " + yytext());}
 {MATHMUL} {System.out.println("* seen!  " + yytext());}
 {MATHPLU} {System.out.println("+ seen!  " + yytext());}
-{NUMCONST} {System.out.println("Numconst seen!  " + yytext());}
-"#"{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("ID seen!  " + yytext());}
+{MATHMIN} {System.out.println("- seen!  " + yytext());}
+"0" | {NDIGIT}{WDIGIT}* {System.out.println("Numconst seen!  " + yytext());}
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("ID seen!  " + yytext());}
 {CHARCONST} {System.out.println("Charconst seen!  " + yytext());}
 {COMMENT} {System.out.println("Comment seen!  " + yytext());}
-{WHITESPACE} {System.out.println("Whitespace seen!  " + yytext());}
+{WHITESPACE}+ {System.out.println("Whitespace seen!  " + yytext());}
 //. {System.out.println("Unknown!   " + yytext());}
