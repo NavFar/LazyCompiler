@@ -4,7 +4,8 @@ LETTER = [a-zA-Z]
 WDIGIT = [0-9]
 NDIGIT = [1-9]
 LETWDIGIT = (LETTER | WDIGIT)
-CHARCONST = \\([A-Za-mo-z1-9\\])
+NULL = "\\"(0)
+CHARCONST = "\\"(.)
 COMMENT = "//"(.)*
 SHARP = "#"
 WHITESPACE = [ \t\n\r] 
@@ -99,13 +100,14 @@ MATHPLU = "+"
 {GE} {System.out.println(".ge seen!  " + yytext());}
 {EQ} {System.out.println(".eq seen!  " + yytext());}
 {NE} {System.out.println(".ne seen!  " + yytext());}
-{MATHDIV} {System.out.println("// seen!  " + yytext());}
+{MATHDIV} {System.out.println("mathDivision seen!  " + yytext());}
 {MATHMOD} {System.out.println("% seen!  " + yytext());}
 {MATHMUL} {System.out.println("* seen!  " + yytext());}
 {MATHPLU} {System.out.println("+ seen!  " + yytext());}
 {MATHMIN} {System.out.println("- seen!  " + yytext());}
 "0" | {NDIGIT}{WDIGIT}* {System.out.println("Numconst seen!  " + yytext());}
 {SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("ID seen!  " + yytext());}
+{NULL} {System.out.println("Null seen!  " + yytext());}
 {CHARCONST} {System.out.println("Charconst seen!  " + yytext());}
 {COMMENT} {System.out.println("Comment seen!  " + yytext());}
 {WHITESPACE}+ {System.out.println("Whitespace seen!  " + yytext());}
