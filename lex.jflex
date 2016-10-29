@@ -8,7 +8,7 @@ NULL = "\\"(0)
 CHARCONST = "\\"(.)
 COMMENT = "//"(.)*
 SHARP = "#"
-WHITESPACE = [ \t\n\r] 
+WHITESPACE = [ \t\n\r]
 RECORD = "record"
 OPEN_BRACE = "{"
 CLOSE_BRACE = "}"
@@ -108,7 +108,8 @@ MATHPLU = "+"
 "0" | {NDIGIT}{WDIGIT}* {System.out.println("Numconst seen!  " + yytext());}
 {SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("ID seen!  " + yytext());}
 {NULL} {System.out.println("Null seen!  " + yytext());}
-{CHARCONST} {System.out.println("Charconst seen!  " + yytext());}
+{CHARCONST} {System.out.println("Charconst seen!(\\ based)  " + yytext());}
+"'"(.)"'" {System.out.println("Charconst seen!(quote based) "+ yytext());}
 {COMMENT} {System.out.println("Comment seen!  " + yytext());}
 {WHITESPACE}+ {System.out.println("Whitespace seen!  " + yytext());}
 //. {System.out.println("Unknown!   " + yytext());}

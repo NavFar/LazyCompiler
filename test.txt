@@ -1,6 +1,7 @@
 record #po11 {
 int #xx11, #yy11;
 char #aa22 = \w;
+char #bb11 ='w';
 real #nn11 = \0;
 }
 record #li11 {
