@@ -61,62 +61,62 @@ MATHMOD = "%"
 MATHPLU = "+"
 
 %%
-{RECORD} {System.out.println("Record KW seen!  " + yytext());}
-{OPEN_BRACE} {System.out.println("{ seen!  " + yytext());}
-{CLOSE_BRACE} {System.out.println("} seen!  " + yytext());}
-{SEMICOLON} {System.out.println("; seen!  " + yytext());}
-{COLON} {System.out.println(": seen!  " + yytext());}
-{COMMA} {System.out.println(", seen!  " + yytext());}
-"0" | {NDIGIT}{WDIGIT}*"."{WDIGIT}*{NDIGIT} {System.out.println("Realconst seen!  " + yytext());}
-{DOT} {System.out.println(". seen!  " + yytext());}
-{OPEN_BRACKET} {System.out.println("[ seen!  " + yytext());}
-{CLOSE_BRACKET} {System.out.println("] seen!  " + yytext());}
-{STATIC} {System.out.println("static KW seen!  " + yytext());}
-{INT} {System.out.println("int KW seen!  " + yytext());}
-{REAL} {System.out.println("real KW seen!  " + yytext());}
-{BOOL} {System.out.println("bool KW seen!  " + yytext());}
-{TRUE} {System.out.println("true seen!  " + yytext());}
-{FALSE} {System.out.println("false seen!  " + yytext());}
-{CHAR} {System.out.println("CHAR KW seen!  " + yytext());}
-{OPEN_PHARANTECE} {System.out.println("( seen!  " + yytext());}
-{CLOSE_PHARANTECE} {System.out.println(") seen!  " + yytext());}
-{IF} {System.out.println("IF KW seen!  " + yytext());}
-{ELSE} {System.out.println("ELSE KW seen!  " + yytext());}
-{SWITCH} {System.out.println("SWITCH KW seen!  " + yytext());}
-{END} {System.out.println("END KW seen!  " + yytext());}
-{CASE} {System.out.println("CASE KW seen!  " + yytext());}
-{DEFAULT} {System.out.println("DEFAULT KW seen!  " + yytext());}
-{WHILE} {System.out.println("WHILE KW seen!  " + yytext());}
-{RETURN} {System.out.println("RETURN KW seen!  " + yytext());}
-{BREAK} {System.out.println("BREAK KW seen!  " + yytext());}
-{EQUAL} {System.out.println("= seen!  " + yytext());}
-{PLUSEQUAL} {System.out.println("+= seen!  " + yytext());}
-{MINUSEQUAL} {System.out.println("-= seen!  " + yytext());}
-{MULTIPLYEQUAL} {System.out.println("*= seen!  " + yytext());}
-{DIVIDEQUAL} {System.out.println("/= seen!  " + yytext());}
-{PLUSPLUS} {System.out.println("++ seen!  " + yytext());}
-{MINUSMINUS} {System.out.println("-- seen!  " + yytext());}
-{OR} {System.out.println("OR seen!  " + yytext());}
-{AND} {System.out.println("AND seen!  " + yytext());}
-{ORELSE} {System.out.println("ORELSE seen!  " + yytext());}
-{ANDTHEN} {System.out.println("ANDTHEN seen!  " + yytext());}
-{NOT} {System.out.println("NOT seen!  " + yytext());}
-{LE} {System.out.println(".le seen!  " + yytext());}
-{LT} {System.out.println(".lt seen!  " + yytext());}
-{GT} {System.out.println(".gt seen!  " + yytext());}
-{GE} {System.out.println(".ge seen!  " + yytext());}
-{EQ} {System.out.println(".eq seen!  " + yytext());}
-{NE} {System.out.println(".ne seen!  " + yytext());}
-{MATHDIV} {System.out.println("mathDivision seen!  " + yytext());}
-{MATHMOD} {System.out.println("% seen!  " + yytext());}
-{MATHMUL} {System.out.println("* seen!  " + yytext());}
-{MATHPLU} {System.out.println("+ seen!  " + yytext());}
-{MATHMIN} {System.out.println("- seen!  " + yytext());}
-"0" | {NDIGIT}{WDIGIT}* {System.out.println("Numconst seen!  " + yytext());}
-{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("ID seen!  " + yytext());}
-{NULL} {System.out.println("Null seen!  " + yytext());}
-{CHARCONST} {System.out.println("Charconst seen!(\\ based)  " + yytext());}
-"'"(.)"'" {System.out.println("Charconst seen!(quote based) "+ yytext());}
-{COMMENT} {System.out.println("Comment seen!  " + yytext());}
-{WHITESPACE}+ {System.out.println("Whitespace seen!  " + yytext());}
-//. {System.out.println("Unknown!   " + yytext());}
+{RECORD} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Record KW'");}
+{OPEN_BRACE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Open Brace'");}
+{CLOSE_BRACE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Close Brace'");}
+{SEMICOLON} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Semicolon'");}
+{COLON} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Colon'");}
+{COMMA} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Comma'");}
+"0" | {NDIGIT}{WDIGIT}*"."{WDIGIT}*{NDIGIT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Realconst'");}
+{DOT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Dot'");}
+{OPEN_BRACKET} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Open Bracket'");}
+{CLOSE_BRACKET} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Close Bracket'");}
+{STATIC} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Static KW'");}
+{INT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Int KW'");}
+{REAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Real KW'");}
+{BOOL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Bool KW'");}
+{TRUE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'True KW'");}
+{FALSE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'False KW'");}
+{CHAR} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Char KW'");}
+{OPEN_PHARANTECE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Open Parenthesis'");}
+{CLOSE_PHARANTECE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Close Parenthesis'");}
+{IF} {System.out.println("' "+yytext()+" ' Seen and tagged as 'If KW'");}
+{ELSE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Else KW'");}
+{SWITCH} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Switch KW'");}
+{END} {System.out.println("' "+yytext()+" ' Seen and tagged as 'End KW'");}
+{CASE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Case KW'");}
+{WHILE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'While KW'");}
+{DEFAULT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Default KW'");}
+{RETURN} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Return KW'");}
+{BREAK} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Break KW'");}
+{EQUAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Equal KW'");}
+{PLUSEQUAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'PlusEqual'");}
+{MINUSEQUAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MinusEqual'");}
+{MULTIPLYEQUAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MultiplyEqual'");}
+{DIVIDEQUAL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'DividEqual'");}
+{PLUSPLUS} {System.out.println("' "+yytext()+" ' Seen and tagged as 'PlusPlus'");}
+{MINUSMINUS} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MinusMinus'");}
+{OR} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Or KW'");}
+{AND} {System.out.println("' "+yytext()+" ' Seen and tagged as 'And KW'");}
+{ORELSE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'OrElse KW'");}
+{ANDTHEN} {System.out.println("' "+yytext()+" ' Seen and tagged as 'AndThen KW'");}
+{NOT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Not KW'");}
+{LE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'LE KW'");}
+{LT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'LT KW'");}
+{GT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'GT KW'");}
+{GE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'GE KW'");}
+{EQ} {System.out.println("' "+yytext()+" ' Seen and tagged as 'EQ KW'");}
+{NE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'NE KW'");}
+{MATHDIV} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MathDiv'");}
+{MATHMOD} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MathMod'");}
+{MATHMUL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MathMul'");}
+{MATHPLU} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MathPlu'");}
+{MATHMIN} {System.out.println("' "+yytext()+" ' Seen and tagged as 'MathMin'");}
+"0" | {NDIGIT}{WDIGIT}* {System.out.println("' "+yytext()+" ' Seen and tagged as 'NumConst'");}
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'ID'");}
+{NULL} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Null'");}
+{CHARCONST} {System.out.println("' "+yytext()+" ' Seen and tagged as 'CharConst (\\based)'");}
+"'"(.)"'" {System.out.println("' "+yytext()+" ' Seen and tagged as 'CharConst(quote based)'");}
+{COMMENT} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Comment'");}
+{WHITESPACE}+ {System.out.println("' "+yytext()+" ' Seen and tagged as 'White Space'");}
+//. {System.out.println("' "+yytext()+" ' Seen and tagged as 'Unknown'");}
