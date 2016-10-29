@@ -25,8 +25,8 @@ INT = "int"
 REAL = "real"
 BOOL = "bool"
 CHAR = "char"
-OPEN_PHARANTECE = "("
-CLOSE_PHARANTECE = ")"
+OPEN_PARANTHESIS = "("
+CLOSE_PARANTHESIS = ")"
 IF = "if"
 ELSE = "else"
 SWITCH = "switch"
@@ -78,8 +78,8 @@ MATHPLU = "+"
 {TRUE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'True KW'");}
 {FALSE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'False KW'");}
 {CHAR} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Char KW'");}
-{OPEN_PHARANTECE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Open Parenthesis'");}
-{CLOSE_PHARANTECE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Close Parenthesis'");}
+{OPEN_PARANTHESIS} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Open Parenthesis'");}
+{CLOSE_PARANTHESIS} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Close Parenthesis'");}
 {IF} {System.out.println("' "+yytext()+" ' Seen and tagged as 'If KW'");}
 {ELSE} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Else KW'");}
 {SWITCH} {System.out.println("' "+yytext()+" ' Seen and tagged as 'Switch KW'");}
