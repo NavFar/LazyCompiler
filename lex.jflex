@@ -4,6 +4,8 @@ LETTER = [a-zA-Z]
 WDIGIT = [0-9]
 NDIGIT = [1-9]
 LETWDIGIT = (LETTER | WDIGIT)
+TRUE = "true"
+FALSE = "false"
 NULL = "\\"(0)
 CHARCONST = "\\"(.)
 COMMENT = "//"(.)*
@@ -13,6 +15,7 @@ RECORD = "record"
 OPEN_BRACE = "{"
 CLOSE_BRACE = "}"
 SEMICOLON = ";"
+COLON = ":"
 COMMA = ","
 DOT = "."
 OPEN_BRACKET = "["
@@ -62,7 +65,9 @@ MATHPLU = "+"
 {OPEN_BRACE} {System.out.println("{ seen!  " + yytext());}
 {CLOSE_BRACE} {System.out.println("} seen!  " + yytext());}
 {SEMICOLON} {System.out.println("; seen!  " + yytext());}
+{COLON} {System.out.println(": seen!  " + yytext());}
 {COMMA} {System.out.println(", seen!  " + yytext());}
+"0" | {NDIGIT}{WDIGIT}*"."{WDIGIT}*{NDIGIT} {System.out.println("Realconst seen!  " + yytext());}
 {DOT} {System.out.println(". seen!  " + yytext());}
 {OPEN_BRACKET} {System.out.println("[ seen!  " + yytext());}
 {CLOSE_BRACKET} {System.out.println("] seen!  " + yytext());}
@@ -70,6 +75,8 @@ MATHPLU = "+"
 {INT} {System.out.println("int KW seen!  " + yytext());}
 {REAL} {System.out.println("real KW seen!  " + yytext());}
 {BOOL} {System.out.println("bool KW seen!  " + yytext());}
+{TRUE} {System.out.println("true seen!  " + yytext());}
+{FALSE} {System.out.println("false seen!  " + yytext());}
 {CHAR} {System.out.println("CHAR KW seen!  " + yytext());}
 {OPEN_PHARANTECE} {System.out.println("( seen!  " + yytext());}
 {CLOSE_PHARANTECE} {System.out.println(") seen!  " + yytext());}
