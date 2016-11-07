@@ -59,6 +59,15 @@
 %token COMMENT
 %token WHITESPACE
 
+%left OR ORELSE
+%left AND ANDTHEN
+%left EQ NE
+%left LT GT LE GE
+%left MATHPLU MATHMIN
+%left MATHMOD
+%left MATHMUL MATHDIV
+%right NOT
+%nonassoc ELSE
 %%
 program : declarationList {System.out.println("Rule 1 program : declarationList");};
  declarationList : declarationList declaration {System.out.println("Rule 2 declarationList : declarationList declaration");};
