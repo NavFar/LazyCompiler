@@ -17,6 +17,7 @@ int #gn11, #ho12[100];
 #aP11.#xx11 = 666; #aP11.#yy11 = 667;
 #aL11.#xx11.#xx11 = 1; #aL11.#xx11.#yy11 = 2; #aL11.#yy11.#xx11 = 3; #aL11.#yy11.#yy11 = 4;
 #tw33[0].#xx11.#xx11 = 42; #tw33[1].#yy11.#xx11 = 43;
+int #ta33 = ?#tw33;
 #gn11 = #ho12[2] = 3** #ca23; // hog is 3 times the size of array passed to cat
 switch(#gn11){
 case 1 : //case1
