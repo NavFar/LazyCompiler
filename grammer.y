@@ -135,7 +135,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | mutable MINUSEQUAL expression {System.out.println("Rule 61 expression : mutable -= expression");};
  | mutable MULTIPLYEQUAL expression {System.out.println("Rule 62 expression : mutable *= expression");};
  | mutable DIVIDEQUAL expression {System.out.println("Rule 63 expression : mutable /= expression");};
- | mutable PLUSEQUAL {System.out.println("Rule 64 expression : mutable ++");};
+ | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");};
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");};
  | simpleExpression {System.out.println("Rule 66 expression : simpleExpression");};
  simpleExpression : simpleExpression OR simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");};
