@@ -12,6 +12,7 @@
 %token INT
 %token REAL
 %token BOOL
+%token RECTYPE
 %token TRUE
 %token FALSE
 %token CHAR
@@ -65,7 +66,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  declaration : varDeclaration {System.out.println("Rule 4 declaration : varDeclaration");};
  | funDeclaration {System.out.println("Rule 5 declaration : funDeclaration");};
  | recDeclaration {System.out.println("Rule 6 declaration : recDeclaration");};
- recDeclaration : record ID OPEN_BRACE localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }");};
+ recDeclaration : RECORD ID OPEN_BRACE localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }");};
  varDeclaration : typeSpecifier varDeclList SEMICOLON {System.out.println("Rule 8 varDeclaration : typeSpecifier varDeclList ;");};
  scopedVarDeclaration : scopedTypeSpecifier varDeclList SEMICOLON {System.out.println("Rule 9 scopedVarDeclaration : scopedTypeSpecifier varDeclList ;");};
  varDeclList : varDeclList COMMA varDeclInitialize {System.out.println("Rule 10 varDeclList : varDeclList , varDeclInitialize");};
@@ -78,10 +79,10 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
  typeSpecifier : returnTypeSpecifier {System.out.println("Rule 18 typeSpecifier : returnTypeSpecifier");};
  | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE");};
- returnTypeSpecifier : int {System.out.println("Rule 20 returnTypeSpecifier : int");};
- | real {System.out.println("Rule 21 returnTypeSpecifier : real");};
- | bool {System.out.println("Rule 22 returnTypeSpecifier : bool");};
- | char {System.out.println("Rule 23 returnTypeSpecifier : char");};
+ returnTypeSpecifier : INT {System.out.println("Rule 20 returnTypeSpecifier : int");};
+ | REAL {System.out.println("Rule 21 returnTypeSpecifier : real");};
+ | BOOL {System.out.println("Rule 22 returnTypeSpecifier : bool");};
+ | CHAR {System.out.println("Rule 23 returnTypeSpecifier : char");};
  funDeclaration : typeSpecifier ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS statement {System.out.println("Rule 24 funDeclaration : typeSpecifier ID ( params ) statement");};
  | ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS statement {System.out.println("Rule 25 funDeclaration : ID ( params ) statement");};
  params : paramList {System.out.println("Rule 26 params : paramList");};
@@ -113,9 +114,9 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | caseElement CASE NUMCONST COLON statement SEMICOLON {System.out.println("Rule 52 caseElement : caseElement CASE NUMCONST : statement ;");};
  defaultElement : DEFAULT COLON statement SEMICOLON {System.out.println("Rule 53 defaultElement : DEFAULT : statement ;");};
  | {System.out.println("Rule 54 defaultElement : lamda");};
- iterationStmt : while OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement {System.out.println("Rule 55 iterationStmt : while ( simpleExpression ) statement");};
- returnStmt : return SEMICOLON {System.out.println("Rule 56 returnStmt : return ;");};
- | return expression SEMICOLON {System.out.println("Rule 57 returnStmt : return expression ;");};
+ iterationStmt : WHILE OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement {System.out.println("Rule 55 iterationStmt : while ( simpleExpression ) statement");};
+ returnStmt : RETURN SEMICOLON {System.out.println("Rule 56 returnStmt : return ;");};
+ | RETURN expression SEMICOLON {System.out.println("Rule 57 returnStmt : return expression ;");};
  breakStmt : BREAK SEMICOLON {System.out.println("Rule 58 breakStmt : break ;");};
  expression : mutable EQUAL expression {System.out.println("Rule 59 expression : mutable = expression");};
  | mutable PLUSEQUAL expression {System.out.println("Rule 60 expression : mutable += expression");};
@@ -126,10 +127,10 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");};
  | simpleExpression {System.out.println("Rule 66 expression : simpleExpression");};
  simpleExpression : simpleExpression OR simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");};
- | simpleExpression and simpleExpression {System.out.println("Rule 68 simpleExpression : simpleExpression and simpleExpression");};
- | simpleExpression or else simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");};
- | simpleExpression and then simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");};
- | not simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");};
+ | simpleExpression AND simpleExpression {System.out.println("Rule 68 simpleExpression : simpleExpression and simpleExpression");};
+ | simpleExpression ORELSE simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");};
+ | simpleExpression ANDTHEN simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");};
+ | NOT simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");};
  | relExpression {System.out.println("Rule 72 simpleExpression : relExpression");};
  relExpression : mathlogicExpression relop mathlogicExpression {System.out.println("Rule 73 relExpression : mathlogicExpression relop mathlogicExpression");};
  | mathlogicExpression {System.out.println("Rule 74 relExpression : mathlogicExpression");};

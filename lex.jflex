@@ -27,6 +27,7 @@ INT = "int"
 REAL = "real"
 BOOL = "bool"
 CHAR = "char"
+RECTYPE = "RECTYPE"
 OPEN_PARANTHESIS = "("
 CLOSE_PARANTHESIS = ")"
 IF = "if"
@@ -77,6 +78,7 @@ MATHPLU = "+"
 {INT} {return YYParser.INT ;}
 {REAL} {return YYParser.REAL ;}
 {BOOL} {return YYParser.BOOL ;}
+{RECTYPE} {return YYParser.RECTYPE ;}
 {TRUE} {return YYParser.TRUE ;}
 {FALSE} {return YYParser.FALSE ;}
 {CHAR} {return YYParser.CHAR ;}
