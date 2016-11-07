@@ -59,6 +59,7 @@
 %token COMMENT
 %token WHITESPACE
 
+
 %left OR ORELSE
 %left AND ANDTHEN
 %left EQ NE
@@ -67,7 +68,9 @@
 %left MATHMOD
 %left MATHMUL MATHDIV
 %right NOT
+%nonassoc p
 %nonassoc ELSE
+
 %%
 program : declarationList {System.out.println("Rule 1 program : declarationList");};
  declarationList : declarationList declaration {System.out.println("Rule 2 declarationList : declarationList declaration");};
@@ -116,8 +119,8 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | {System.out.println("Rule 45 statementList : lamda");};
  expressionStmt : expression SEMICOLON {System.out.println("Rule 46 expressionStmt : expression ;");};
  | SEMICOLON {System.out.println("Rule 47 expressionStmt : ;");};
- selectionStmt : IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement {System.out.println("Rule 48 selectionStmt : IF ( simpleExpression ) statement");};
- | IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement ELSE statement {System.out.println("Rule 49 selectionStmt : IF ( simpleExpression ) statement ELSE statement");};
+ selectionStmt : IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement ELSE statement   {System.out.println("Rule 49 selectionStmt : IF ( simpleExpression ) statement ELSE statement");};
+ |IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement %prec p {System.out.println("Rule 48 selectionStmt : IF ( simpleExpression ) statement");};
  | SWITCH OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS caseElement defaultElement END {System.out.println("Rule 50 selectionStmt : SWITCH ( simpleExpression ) caseElement defaultElement END");};
  caseElement : CASE NUMCONST COLON statement SEMICOLON {System.out.println("Rule 51 caseElement : CASE NUMCONST : statement ;");};
  | caseElement CASE NUMCONST COLON statement SEMICOLON {System.out.println("Rule 52 caseElement : caseElement CASE NUMCONST : statement ;");};
@@ -149,37 +152,36 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | GE {System.out.println("Rule 78 relop : GE");};
  | EQ {System.out.println("Rule 79 relop : EQ");};
  | NE {System.out.println("Rule 80 relop : NE");};
- mathlogicExpression : mathlogicExpression mathop mathlogicExpression {System.out.println("Rule 81 mathlogicExpression : mathlogicExpression mathop mathlogicExpression");};
- | unaryExpression {System.out.println("Rule 82 mathlogicExpression : unaryExpression");};
- mathop : MATHPLU {System.out.println("Rule 83 mathop : MATHPLU");};
- | MATHMIN {System.out.println("Rule 84 mathop : MATHMIN");};
- | MATHMUL {System.out.println("Rule 85 mathop : MATHMUL");};
- | MATHDIV {System.out.println("Rule 86 mathop : MATHDIV");};
- | MATHMOD {System.out.println("Rule 87 mathop : MATHMOD");};
- unaryExpression : unaryop unaryExpression {System.out.println("Rule 88 unaryExpression : unaryop unaryExpression");};
- | factor {System.out.println("Rule 89 unaryExpression : factor");};
- unaryop : MATHMIN {System.out.println("Rule 90 unaryop : MATHMIN");};
- | MATHMUL {System.out.println("Rule 91 unaryop : MATHMUL");};
- | QUESTIONSIGN {System.out.println("Rule 92 unaryop : QUESTIONSIGN");};
- factor : immutable {System.out.println("Rule 93 factor : immutable");};
- | mutable {System.out.println("Rule 94 factor : mutable");};
- mutable : ID {System.out.println("Rule 95 mutable : ID");};
- | mutable OPEN_BRACKET expression CLOSE_BRACKET {System.out.println("Rule 96 mutable : mutable [ expression ]");};
- | mutable DOT ID {System.out.println("Rule 97 mutable : mutable DOT ID");};
- immutable : OPEN_PARANTHESIS expression CLOSE_PARANTHESIS {System.out.println("Rule 98 immutable : ( expression )");};
- | call {System.out.println("Rule 99 immutable : call");};
- | constant {System.out.println("Rule 100 immutable : constant");};
- call : ID OPEN_PARANTHESIS args CLOSE_PARANTHESIS {System.out.println("Rule 101 call : ID ( args )");};
- args : argList {System.out.println("Rule 102 args : argList");};
- | {System.out.println("Rule 103 args : lamda");};
- argList : argList COMMA expression {System.out.println("Rule 104 argList : argList , expression");};
- | expression {System.out.println("Rule 105 argList : expression");};
- constant : NUMCONST {System.out.println("Rule 106 constant : NUMCONST");};
- | REALCONST {System.out.println("Rule 107 constant : REALCONST");};
- | CHARCONST1 {System.out.println("Rule 108 constant : CHARCONST1");};
- | CHARCONST2 {System.out.println("Rule 109 constant : CHARCONST2");};
- | TRUE {System.out.println("Rule 110 constant : TRUE");};
- | FALSE {System.out.println("Rule 111 constant : FALSE");};
+ mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression {System.out.println("Rule 81 mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression");};
+ | mathlogicExpression MATHMUL mathlogicExpression {System.out.println("Rule 82 mathlogicExpression : mathlogicExpression MATHMUL mathlogicExpression");};
+ | mathlogicExpression MATHDIV mathlogicExpression {System.out.println("Rule 83 mathlogicExpression : mathlogicExpression MATHDIV mathlogicExpression");};
+ | mathlogicExpression MATHPLU mathlogicExpression {System.out.println("Rule 84 mathlogicExpression : mathlogicExpression MATHPLU mathlogicExpression");};
+ | mathlogicExpression MATHMOD mathlogicExpression {System.out.println("Rule 85 mathlogicExpression : mathlogicExpression MATHMOD mathlogicExpression");};
+ | unaryExpression {System.out.println("Rule 86 mathlogicExpression : unaryExpression");};
+ unaryExpression : unaryop unaryExpression {System.out.println("Rule 87 unaryExpression : unaryop unaryExpression");};
+ | factor {System.out.println("Rule 88 unaryExpression : factor");};
+ unaryop : MATHMIN {System.out.println("Rule 89 unaryop : MATHMIN");};
+ | MATHMUL {System.out.println("Rule 90 unaryop : MATHMUL");};
+ | QUESTIONSIGN {System.out.println("Rule 91 unaryop : QUESTIONSIGN");};
+ factor : immutable {System.out.println("Rule 92 factor : immutable");};
+ | mutable {System.out.println("Rule 93 factor : mutable");};
+ mutable : ID {System.out.println("Rule 94 mutable : ID");};
+ | mutable OPEN_BRACKET expression CLOSE_BRACKET {System.out.println("Rule 95 mutable : mutable [ expression ]");};
+ | mutable DOT ID {System.out.println("Rule 96 mutable : mutable DOT ID");};
+ immutable : OPEN_PARANTHESIS expression CLOSE_PARANTHESIS {System.out.println("Rule 97 immutable : ( expression )");};
+ | call {System.out.println("Rule 98 immutable : call");};
+ | constant {System.out.println("Rule 99 immutable : constant");};
+ call : ID OPEN_PARANTHESIS args CLOSE_PARANTHESIS {System.out.println("Rule 100 call : ID ( args )");};
+ args : argList {System.out.println("Rule 101 args : argList");};
+ | {System.out.println("Rule 102 args : lamda");};
+ argList : argList COMMA expression {System.out.println("Rule 103 argList : argList , expression");};
+ | expression {System.out.println("Rule 104 argList : expression");};
+ constant : NUMCONST {System.out.println("Rule 105 constant : NUMCONST");};
+ | REALCONST {System.out.println("Rule 106 constant : REALCONST");};
+ | CHARCONST1 {System.out.println("Rule 107 constant : CHARCONST1");};
+ | CHARCONST2 {System.out.println("Rule 108 constant : CHARCONST2");};
+ | TRUE {System.out.println("Rule 109 constant : TRUE");};
+ | FALSE {System.out.println("Rule 110 constant : FALSE");};
 
 
 %%
