@@ -121,7 +121,7 @@ MATHPLU = "+"
 {NULL} {return YYParser.NULL ;}
 {CHARCONST1} {return YYParser.CHARCONST1 ;}
 {CHARCONST2} {return YYParser.CHARCONST2 ;}
-{COMMENT} {return YYParser.COMMENT ;}
-{WHITESPACE}+ {return YYParser.WHITESPACE ;}
+{COMMENT} { }
+{WHITESPACE}+ { }
 {QUESTIONSIGN} {return YYParser.QUESTIONSIGN ;}
-//. {return YYParser. ;}
+.* {System.out.println("Unidentified lexem at: " + yytext()) ;}
