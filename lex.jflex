@@ -30,6 +30,7 @@ CHARCONST2 = "'"(.)"'"
 COMMENT = "//"(.)*
 SHARP = "#"
 WHITESPACE = [ \t\n\r]
+INLINEWHITESPACE = [ \t]
 RECORD = "record"
 OPEN_BRACE = "{"
 CLOSE_BRACE = "}"
@@ -134,6 +135,7 @@ MATHPLU = "+"
 {MATHPLU} {return YYParser.MATHPLU ;}
 {MATHMIN} {return YYParser.MATHMIN ;}
 "0" | {NDIGIT}{WDIGIT}* {return YYParser.NUMCONST ;}
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT}{INLINEWHITESPACE}*{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {yypushback(yylength()-5);retrun YYParser.RECTYPE}
 {SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {YYParser.current_ID = yytext(); return YYParser.ID ; }
 {NULL} {return YYParser.NULL ;}
 {CHARCONST1} {return YYParser.CHARCONST1 ;}
