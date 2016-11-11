@@ -71,6 +71,52 @@
 %nonassoc p
 %nonassoc ELSE
 
+%define public
+%define package Parser
+%{
+import java.util.Vector;
+%}
+%code {
+	
+	private class SymbolTableRecord{
+		public String type;
+		public String name;
+		public String value;
+		public SymbolTableRecord(String type, String name, String value) {
+			this.type = type;
+			this.name = name;
+			this.value = value;
+		}
+	}
+	public static String last_type = "";
+	public static String current_ID = "";
+	
+	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
+	void insertIntoST(String varID){
+		System.out.println("INSERTING:  "+ varID);
+		System.out.println("Type:  "+ last_type);
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			/*if(symbolTable.elementAt(i).name == varID){
+				yyerror("duplicate var declaration\n");
+				return;
+			}*/
+		}
+		//no occurance found, so we insert
+		symbolTable.add(new SymbolTableRecord(last_type, varID, "\0"));
+	}
+	
+	boolean searchInST(String varID){
+		System.out.print("SEARCHING:  "+ varID);
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			if(symbolTable.elementAt(i).name == varID){
+				return true;
+			}
+		}
+		return false;
+	}
+
+}
+
 %%
 program : declarationList {System.out.println("Rule 1 program : declarationList");};
  declarationList : declarationList declaration {System.out.println("Rule 2 declarationList : declarationList declaration");};
@@ -85,12 +131,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | varDeclInitialize {System.out.println("Rule 11 varDeclList : varDeclInitialize");};
  varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");};
  | varDeclId COLON simpleExpression {System.out.println("Rule 13 varDeclInitialize : varDeclId : simpleExpression");};
- varDeclId : ID {System.out.println("Rule 14 varDeclId : ID");};
- | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]");};
+ varDeclId : ID {System.out.println("Rule 14 varDeclId : ID");  insertIntoST(current_ID);};
+ | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]"); insertIntoST(current_ID);};
  scopedTypeSpecifier : STATIC typeSpecifier {System.out.println("Rule 16 scopedTypeSpecifier : STATIC typeSpecifier");};
  | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
- typeSpecifier : returnTypeSpecifier {System.out.println("Rule 18 typeSpecifier : returnTypeSpecifier");};
- | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE");};
+ typeSpecifier : returnTypeSpecifier {System.out.println("Rule 18 typeSpecifier : returnTypeSpecifier"); last_type = yylexer.getLVal().toString();};
+ | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE"); last_type = yylexer.getLVal().toString();};
  returnTypeSpecifier : INT {System.out.println("Rule 20 returnTypeSpecifier : int");};
  | REAL {System.out.println("Rule 21 returnTypeSpecifier : real");};
  | BOOL {System.out.println("Rule 22 returnTypeSpecifier : bool");};

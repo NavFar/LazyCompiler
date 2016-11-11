@@ -1,5 +1,22 @@
-
+import Parser.YYParser;
+import Parser.YYParser.*;
 %%
+
+%implements Lexer
+%{
+
+public Object getLVal() {
+	// TODO Auto-generated method stub
+	//System.out.println("curret word: " + yytext());
+	return yytext();
+}
+
+public void yyerror(String s) {
+	// TODO Auto-generated method stub
+	System.err.println(s + " at line "+ yyline + " at " + yytext());
+}
+%}
+
 LETTER = [a-zA-Z]
 WDIGIT = [0-9]
 NDIGIT = [1-9]
@@ -117,11 +134,11 @@ MATHPLU = "+"
 {MATHPLU} {return YYParser.MATHPLU ;}
 {MATHMIN} {return YYParser.MATHMIN ;}
 "0" | {NDIGIT}{WDIGIT}* {return YYParser.NUMCONST ;}
-{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {return YYParser.ID ;}
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {YYParser.current_ID = yytext(); return YYParser.ID ; }
 {NULL} {return YYParser.NULL ;}
 {CHARCONST1} {return YYParser.CHARCONST1 ;}
 {CHARCONST2} {return YYParser.CHARCONST2 ;}
 {COMMENT} { }
 {WHITESPACE}+ { }
 {QUESTIONSIGN} {return YYParser.QUESTIONSIGN ;}
-.* {System.out.println("Unidentified lexem at: " + yytext()) ;}
+//.+ {System.out.println("Unidentified lexem at: " + yytext()) ;}
