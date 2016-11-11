@@ -4,6 +4,7 @@ import Parser.YYParser.*;
 
 %implements Lexer
 %{
+boolean recordKW_seen = false;
 
 public Object getLVal() {
 	// TODO Auto-generated method stub
@@ -82,7 +83,7 @@ MATHMOD = "%"
 MATHPLU = "+"
 
 %%
-{RECORD} {return YYParser.RECORD ;}
+{RECORD} {recordKW_seen = true ; return YYParser.RECORD ;}
 {OPEN_BRACE} {return YYParser.OPEN_BRACE ;}
 {CLOSE_BRACE} {return YYParser.CLOSE_BRACE ;}
 {SEMICOLON} {return YYParser.SEMICOLON ;}
@@ -135,8 +136,8 @@ MATHPLU = "+"
 {MATHPLU} {return YYParser.MATHPLU ;}
 {MATHMIN} {return YYParser.MATHMIN ;}
 "0" | {NDIGIT}{WDIGIT}* {return YYParser.NUMCONST ;}
-{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT}{INLINEWHITESPACE}*{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {yypushback(yylength()-5);retrun YYParser.RECTYPE}
-{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {YYParser.current_ID = yytext(); return YYParser.ID ; }
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT}{INLINEWHITESPACE}*{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {yypushback(yylength()-5);return YYParser.RECTYPE;}
+{SHARP}{LETTER}{LETTER}{WDIGIT}{WDIGIT} {if(recordKW_seen){ YYParser.current_record = yytext(); recordKW_seen = false;} YYParser.current_ID = yytext(); return YYParser.ID ; }
 {NULL} {return YYParser.NULL ;}
 {CHARCONST1} {return YYParser.CHARCONST1 ;}
 {CHARCONST2} {return YYParser.CHARCONST2 ;}

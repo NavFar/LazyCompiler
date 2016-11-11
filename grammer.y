@@ -90,6 +90,7 @@ import java.util.Vector;
 	}
 	public static String last_type = "";
 	public static String current_ID = "";
+	public static String current_record = "";
 	
 	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
 	void insertIntoST(String varID){
@@ -114,6 +115,19 @@ import java.util.Vector;
 		}
 		return false;
 	}
+	
+	void insertRecordIntoST(){
+		System.out.println("INSERTING:  "+ current_record);
+		System.out.println("Type:  record");
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			/*if(symbolTable.elementAt(i).name == varID){
+				yyerror("duplicate var declaration\n");
+				return;
+			}*/
+		}
+		//no occurance found, so we insert
+		symbolTable.add(new SymbolTableRecord("record", current_record, "\0"));
+	}
 
 }
 
@@ -124,7 +138,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  declaration : varDeclaration {System.out.println("Rule 4 declaration : varDeclaration");};
  | funDeclaration {System.out.println("Rule 5 declaration : funDeclaration");};
  | recDeclaration {System.out.println("Rule 6 declaration : recDeclaration");};
- recDeclaration : RECORD ID OPEN_BRACE localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }");};
+ recDeclaration : RECORD ID OPEN_BRACE localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }"); insertRecordIntoST();};
  varDeclaration : typeSpecifier varDeclList SEMICOLON {System.out.println("Rule 8 varDeclaration : typeSpecifier varDeclList ;");};
  scopedVarDeclaration : scopedTypeSpecifier varDeclList SEMICOLON {System.out.println("Rule 9 scopedVarDeclaration : scopedTypeSpecifier varDeclList ;");};
  varDeclList : varDeclList COMMA varDeclInitialize {System.out.println("Rule 10 varDeclList : varDeclList , varDeclInitialize");};
