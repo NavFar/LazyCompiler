@@ -75,6 +75,7 @@
 %define package Parser
 %{
 import java.util.Vector;
+import java.lang.*;
 %}
 %code {
 
@@ -145,7 +146,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | varDeclInitialize {System.out.println("Rule 11 varDeclList : varDeclInitialize");};
  varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");};
  | varDeclId COLON simpleExpression {System.out.println("Rule 13 varDeclInitialize : varDeclId : simpleExpression");};
- varDeclId : ID {((Eval)$1).type="int";System.out.println("Rule 14 varDeclId : ID"+((Eval)$1).type);  insertIntoST(current_ID);};
+ varDeclId : ID {System.out.println("Rule 14 varDeclId : ID");  insertIntoST(current_ID);};
  | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]"); insertIntoST(current_ID);};
  scopedTypeSpecifier : STATIC typeSpecifier {System.out.println("Rule 16 scopedTypeSpecifier : STATIC typeSpecifier");};
  | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
@@ -308,13 +309,13 @@ class Eval{
 /////////////////////////////////////////Methods/////////////////////////////////////////
 	public static Vector<Integer> merge(Vector<Integer> v1 ,Vector<Integer> v2)
 	{
-		Vector<Integer> result=new Vector<>();
+		Vector<Integer> result=new Vector<Integer>();
 		result.addAll(v1);
 		result.addAll(v2);
 		return result;
 	}
 	public static Vector<Integer> makeList(int number) {
-		Vector<Integer> result = new Vector<>();
+		Vector<Integer> result = new Vector<Integer>();
 		result.add(number);
 		return result;
 	}
