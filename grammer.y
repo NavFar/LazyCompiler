@@ -51,7 +51,7 @@
 %token MATHPLU
 %token MATHMIN
 %token NUMCONST
-%token ID
+%token <Eval> ID
 %token NULL
 %token CHARCONST1 /* backSlash based */
 %token CHARCONST2 /* quote based */
@@ -77,7 +77,7 @@
 import java.util.Vector;
 %}
 %code {
-	
+
 	private class SymbolTableRecord{
 		public String type;
 		public String name;
@@ -91,7 +91,7 @@ import java.util.Vector;
 	public static String last_type = "";
 	public static String current_ID = "";
 	public static String current_record = "";
-	
+
 	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
 	void insertIntoST(String varID){
 		System.out.println("INSERTING:  "+ varID);
@@ -105,7 +105,7 @@ import java.util.Vector;
 		//no occurance found, so we insert
 		symbolTable.add(new SymbolTableRecord(last_type, varID, "\0"));
 	}
-	
+
 	boolean searchInST(String varID){
 		System.out.print("SEARCHING:  "+ varID);
 		for(int i=0 ; i<symbolTable.size() ; i++){
@@ -115,7 +115,7 @@ import java.util.Vector;
 		}
 		return false;
 	}
-	
+
 	void insertRecordIntoST(){
 		System.out.println("INSERTING:  "+ current_record);
 		System.out.println("Type:  record");
@@ -145,7 +145,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | varDeclInitialize {System.out.println("Rule 11 varDeclList : varDeclInitialize");};
  varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");};
  | varDeclId COLON simpleExpression {System.out.println("Rule 13 varDeclInitialize : varDeclId : simpleExpression");};
- varDeclId : ID {System.out.println("Rule 14 varDeclId : ID");  insertIntoST(current_ID);};
+ varDeclId : ID {((Eval)$1).type="int";System.out.println("Rule 14 varDeclId : ID"+((Eval)$1).type);  insertIntoST(current_ID);};
  | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]"); insertIntoST(current_ID);};
  scopedTypeSpecifier : STATIC typeSpecifier {System.out.println("Rule 16 scopedTypeSpecifier : STATIC typeSpecifier");};
  | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
@@ -245,3 +245,77 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 
 
 %%
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ _   _                  ____          _
+| | | |___  ___ _ __   / ___|___   __| | ___
+| | | / __|/ _ \ '__| | |   / _ \ / _` |/ _ \
+| |_| \__ \  __/ |    | |__| (_) | (_| |  __/
+ \___/|___/\___|_|     \____\___/ \__,_|\___|
+*/
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+  ___                  _                  _
+ / _ \ _   _  __ _  __| |_ __ _   _ _ __ | | ___
+| | | | | | |/ _` |/ _` | '__| | | | '_ \| |/ _ \
+| |_| | |_| | (_| | (_| | |  | |_| | |_) | |  __/
+ \__\_\\__,_|\__,_|\__,_|_|   \__,_| .__/|_|\___|
+																   |_|
+ ____                        _
+|  _ \ ___  ___ ___  _ __ __| |
+| |_) / _ \/ __/ _ \| '__/ _` |
+|  _ <  __/ (_| (_) | | | (_| |
+|_| \_\___|\___\___/|_|  \__,_|
+*/
+class QuadrupleRecord{
+  /////////////////////////////////////////Attributes/////////////////////////////////////////
+	public String instruction;
+	public String	firstArg;
+	public String secondArg;
+	public String result;
+	/////////////////////////////////////////Methods/////////////////////////////////////////
+	//Constructor
+	public QuadrupleRecord(String instruction,String	firstArg,String secondArg,String result)
+	{
+	this.instruction= instruction;
+	this.firstArg= firstArg;
+	this.secondArg= secondArg;
+	this.result= result;
+	}
+
+}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ _____            _
+| ____|_   ____ _| |
+|  _| \ \ / / _` | |
+| |___ \ V / (_| | |
+|_____| \_/ \__,_|_|
+*/
+class Eval{
+/////////////////////////////////////////Attributes/////////////////////////////////////////
+	public Vector<Integer> trueList;
+	public Vector<Integer> falseList;
+	public String place;
+	public String type;
+	public String code;
+/////////////////////////////////////////Methods/////////////////////////////////////////
+	public static Vector<Integer> merge(Vector<Integer> v1 ,Vector<Integer> v2)
+	{
+		Vector<Integer> result=new Vector<>();
+		result.addAll(v1);
+		result.addAll(v2);
+		return result;
+	}
+	public static Vector<Integer> makeList(int number) {
+		Vector<Integer> result = new Vector<>();
+		result.add(number);
+		return result;
+	}
+}
