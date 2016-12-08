@@ -58,7 +58,10 @@
 %token QUESTIONSIGN
 %token COMMENT
 %token WHITESPACE
-
+%type <Eval> M
+%type <Eval> simpleExpression
+%type <Eval> mutable
+%type <Eval> returnTypeSpecifier
 
 %left OR ORELSE
 %left AND ANDTHEN
@@ -78,17 +81,31 @@ import java.util.Vector;
 import java.lang.*;
 %}
 %code {
-
-	private class SymbolTableRecord{
-		public String type;
-		public String name;
-		public String value;
-		public SymbolTableRecord(String type, String name, String value) {
-			this.type = type;
-			this.name = name;
-			this.value = value;
+	int tmpCounter = 0;
+	Vector<QuadrupleRecord> quadruple = new Vector<QuadrupleRecord>();
+	
+	private void backpatch(Vector<Integer> list, int number){
+		for(int i=0 ; i<list.size() ; i++){
+			quadruple.get(i).result = "" + number;
 		}
 	}
+	
+	private void emit(String instruction, String arg1, String arg2, String result){
+		QuadrupleRecord record = new QuadrupleRecord(instruction, arg1, arg2, result);
+		quadruple.add(record);
+	}
+	
+	private String newTmp(String type){
+		String tmpName = "tmp" + tmpCounter;
+		symbolTable.add(new SymbolTableRecord(type, tmpName, "\0"));
+		tmpCounter++;
+		return tmpName;
+	}
+	
+	private void printQuadruple(){
+		///test
+	}
+
 	public static String last_type = "";
 	public static String current_ID = "";
 	public static String current_record = "";
@@ -116,6 +133,17 @@ import java.lang.*;
 		}
 		return false;
 	}
+	
+	int getIndex(String varID){
+		System.out.print("SEARCHING:  "+ varID);
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			if(symbolTable.elementAt(i).name == varID){
+				return i;
+			}
+		}
+		return -1;
+	}
+	
 
 	void insertRecordIntoST(){
 		System.out.println("INSERTING:  "+ current_record);
@@ -133,7 +161,7 @@ import java.lang.*;
 }
 
 %%
-program : declarationList {System.out.println("Rule 1 program : declarationList");};
+program : declarationList {System.out.println("Rule 1 program : declarationList"); printQuadruple();};
  declarationList : declarationList declaration {System.out.println("Rule 2 declarationList : declarationList declaration");};
  | declaration {System.out.println("Rule 3 declarationList : declaration");};
  declaration : varDeclaration {System.out.println("Rule 4 declaration : varDeclaration");};
@@ -152,10 +180,10 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
  typeSpecifier : returnTypeSpecifier {System.out.println("Rule 18 typeSpecifier : returnTypeSpecifier"); last_type = yylexer.getLVal().toString();};
  | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE"); last_type = yylexer.getLVal().toString();};
- returnTypeSpecifier : INT {System.out.println("Rule 20 returnTypeSpecifier : int");};
- | REAL {System.out.println("Rule 21 returnTypeSpecifier : real");};
- | BOOL {System.out.println("Rule 22 returnTypeSpecifier : bool");};
- | CHAR {System.out.println("Rule 23 returnTypeSpecifier : char");};
+ returnTypeSpecifier : INT {((Eval)$$).type = "int";System.out.println("Rule 20 returnTypeSpecifier : int");};
+ | REAL {((Eval)$$).type = "real";System.out.println("Rule 21 returnTypeSpecifier : real");};
+ | BOOL {((Eval)$$).type = "bool";System.out.println("Rule 22 returnTypeSpecifier : bool");};
+ | CHAR {((Eval)$$).type = "char";System.out.println("Rule 23 returnTypeSpecifier : char");};
  funDeclaration : typeSpecifier ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS statement {System.out.println("Rule 24 funDeclaration : typeSpecifier ID ( params ) statement");};
  | ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS statement {System.out.println("Rule 25 funDeclaration : ID ( params ) statement");};
  params : paramList {System.out.println("Rule 26 params : paramList");};
@@ -199,8 +227,26 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");};
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");};
  | simpleExpression {System.out.println("Rule 66 expression : simpleExpression");};
- simpleExpression : simpleExpression OR simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");};
- | simpleExpression AND simpleExpression {System.out.println("Rule 68 simpleExpression : simpleExpression and simpleExpression");};
+ simpleExpression : simpleExpression OR M simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");
+														//////////////////////////////////////////////////////
+														  ((Eval)$$) = new Eval();
+														  ((Eval)$$).place = newTmp("bool");
+														  ((Eval)$$).type = "bool";
+														  backpatch($1.falseList, $3.quad);
+														  ((Eval)$$).trueList = Eval.merge($1.trueList, $4.trueList);
+														  ((Eval)$$).falseList = $4.falseList;
+														//////////////////////////////////////////////////////														  
+														  };
+ | simpleExpression AND  M simpleExpression {System.out.println("Rule 68 simpleExpression : simpleExpression and simpleExpression");
+ 														//////////////////////////////////////////////////////
+														  ((Eval)$$) = new Eval();
+														  ((Eval)$$).place = newTmp("bool");
+														  ((Eval)$$).type = "bool";
+														  backpatch($1.trueList, $3.quad);
+														  ((Eval)$$).trueList = $4.trueList;
+														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
+														//////////////////////////////////////////////////////
+														};
  | simpleExpression ORELSE simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");};
  | simpleExpression ANDTHEN simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");};
  | NOT simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");};
@@ -226,7 +272,21 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | QUESTIONSIGN {System.out.println("Rule 91 unaryop : QUESTIONSIGN");};
  factor : immutable {System.out.println("Rule 92 factor : immutable");};
  | mutable {System.out.println("Rule 93 factor : mutable");};
- mutable : ID {System.out.println("Rule 94 mutable : ID");};
+ mutable : ID {System.out.println("Rule 94 mutable : ID");
+  														//////////////////////////////////////////////////////
+														((Eval)$$) = new Eval();
+														int index = symbolTable.getIndex($1.place);
+														//Implement existance checking in symbolTable
+														
+														((Eval)$$).place = $1.place;
+														((Eval)$$).type = symbolTable.get(index).type;
+														((Eval)$$).trueList = Eval.makeList(quadruple.size());
+														((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
+														((Eval)$$).nextList = Eval.merge(((Eval)$$).trueList, ((Eval)$$).falseList);
+														emit("if", ((Eval)$$).place, null, null);
+														emit("goto", null,null,null);
+														//////////////////////////////////////////////////////
+ };
  | mutable OPEN_BRACKET expression CLOSE_BRACKET {System.out.println("Rule 95 mutable : mutable [ expression ]");};
  | mutable DOT ID {System.out.println("Rule 96 mutable : mutable DOT ID");};
  immutable : OPEN_PARANTHESIS expression CLOSE_PARANTHESIS {System.out.println("Rule 97 immutable : ( expression )");};
@@ -244,6 +304,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | TRUE {System.out.println("Rule 109 constant : TRUE");};
  | FALSE {System.out.println("Rule 110 constant : FALSE");};
 
+ M : {((Eval)$$).quad = quadruple.size();}
 
 %%
 ////////////////////////////////////////////////////////////////////////////
@@ -280,7 +341,7 @@ class QuadrupleRecord{
 	public String result;
 	/////////////////////////////////////////Methods/////////////////////////////////////////
 	//Constructor
-	public QuadrupleRecord(String instruction,String	firstArg,String secondArg,String result)
+	public QuadrupleRecord(String instruction,String firstArg,String secondArg,String result)
 	{
 	this.instruction= instruction;
 	this.firstArg= firstArg;
@@ -293,30 +354,24 @@ class QuadrupleRecord{
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 /*
- _____            _
-| ____|_   ____ _| |
-|  _| \ \ / / _` | |
-| |___ \ V / (_| | |
-|_____| \_/ \__,_|_|
+ ____                  _           _ _____     _     _      ____                        _ 
+/ ___| _   _ _ __ ___ | |__   ___ | |_   _|_ _| |__ | | ___|  _ \ ___  ___ ___  _ __ __| |
+\___ \| | | | '_ ` _ \| '_ \ / _ \| | | |/ _` | '_ \| |/ _ \ |_) / _ \/ __/ _ \| '__/ _` |
+ ___) | |_| | | | | | | |_) | (_) | | | | (_| | |_) | |  __/  _ <  __/ (_| (_) | | | (_| |
+|____/ \__, |_| |_| |_|_.__/ \___/|_| |_|\__,_|_.__/|_|\___|_| \_\___|\___\___/|_|  \__,_|
+       |___/                                                                              
+
 */
-class Eval{
-/////////////////////////////////////////Attributes/////////////////////////////////////////
-	public Vector<Integer> trueList;
-	public Vector<Integer> falseList;
-	public String place;
-	public String type;
-	public String code;
-/////////////////////////////////////////Methods/////////////////////////////////////////
-	public static Vector<Integer> merge(Vector<Integer> v1 ,Vector<Integer> v2)
-	{
-		Vector<Integer> result=new Vector<Integer>();
-		result.addAll(v1);
-		result.addAll(v2);
-		return result;
+private class SymbolTableRecord{
+		public String type;
+		public String name;
+		public String value;
+		public SymbolTableRecord(String type, String name, String value = "\0") {
+			this.type = type;
+			this.name = name;
+			this.value = value;
+		}
 	}
-	public static Vector<Integer> makeList(int number) {
-		Vector<Integer> result = new Vector<Integer>();
-		result.add(number);
-		return result;
-	}
-}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
