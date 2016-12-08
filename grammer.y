@@ -308,13 +308,13 @@ class Eval{
 /////////////////////////////////////////Methods/////////////////////////////////////////
 	public static Vector<Integer> merge(Vector<Integer> v1 ,Vector<Integer> v2)
 	{
-		Vector<Integer> result=new Vector<>();
+		Vector<Integer> result=new Vector<Integer>();
 		result.addAll(v1);
 		result.addAll(v2);
 		return result;
 	}
 	public static Vector<Integer> makeList(int number) {
-		Vector<Integer> result = new Vector<>();
+		Vector<Integer> result = new Vector<Integer>();
 		result.add(number);
 		return result;
 	}
