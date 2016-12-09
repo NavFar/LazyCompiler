@@ -127,7 +127,7 @@ import java.lang.*;
 	boolean searchInST(String varID){
 		System.out.print("SEARCHING:  "+ varID);
 		for(int i=0 ; i<symbolTable.size() ; i++){
-			if(symbolTable.elementAt(i).name == varID){
+			if(symbolTable.elementAt(i).name.equals(varID)){
 				return true;
 			}
 		}
@@ -137,7 +137,7 @@ import java.lang.*;
 	int getIndex(String varID){
 		System.out.print("SEARCHING:  "+ varID);
 		for(int i=0 ; i<symbolTable.size() ; i++){
-			if(symbolTable.elementAt(i).name == varID){
+			if(symbolTable.elementAt(i).name.equals(varID)){
 				return i;
 			}
 		}
