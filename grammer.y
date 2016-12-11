@@ -4,7 +4,6 @@
 %token SEMICOLON
 %token COLON
 %token COMMA
-%token REALCONST
 %token DOT
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
@@ -50,11 +49,12 @@
 %token MATHMUL
 %token MATHPLU
 %token MATHMIN
-%token NUMCONST
+%token <Eval> NUMCONST
+%token <Eval> REALCONST
+%token <Eval> CHARCONST1 /* backSlash based */
+%token <Eval> CHARCONST2 /* quote based */
 %token <Eval> ID
 %token NULL
-%token CHARCONST1 /* backSlash based */
-%token CHARCONST2 /* quote based */
 %token QUESTIONSIGN
 %token COMMENT
 %token WHITESPACE
@@ -70,6 +70,7 @@
 %type <Eval> simpleExpression
 %type <Eval> relExpression
 %type <Eval> mathlogicExpression
+%type <Eval> relop
 %type <Eval> unaryExpression
 %type <Eval> factor
 %type <Eval> immutable
@@ -94,8 +95,42 @@ import java.lang.*;
 %}
 %code {
 	int tmpCounter = 0;
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ ____                  _           _ _____     _     _      
+/ ___| _   _ _ __ ___ | |__   ___ | |_   _|_ _| |__ | | ___ 
+\___ \| | | | '_ ` _ \| '_ \ / _ \| | | |/ _` | '_ \| |/ _ \
+ ___) | |_| | | | | | | |_) | (_) | | | | (_| | |_) | |  __/
+|____/ \__, |_| |_| |_|_.__/ \___/|_| |_|\__,_|_.__/|_|\___|
+       |___/ 
+*/
+
+	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+  ___                  _                  _      
+ / _ \ _   _  __ _  __| |_ __ _   _ _ __ | | ___ 
+| | | | | | |/ _` |/ _` | '__| | | | '_ \| |/ _ \
+| |_| | |_| | (_| | (_| | |  | |_| | |_) | |  __/
+ \__\_\\__,_|\__,_|\__,_|_|   \__,_| .__/|_|\___|
+                                   |_|  
+*/
 	Vector<QuadrupleRecord> quadruple = new Vector<QuadrupleRecord>();
-	
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ _                _    ____       _       _     
+| |__   __ _  ___| | _|  _ \ __ _| |_ ___| |__  
+| '_ \ / _` |/ __| |/ / |_) / _` | __/ __| '_ \ 
+| |_) | (_| | (__|   <|  __/ (_| | || (__| | | |
+|_.__/ \__,_|\___|_|\_\_|   \__,_|\__\___|_| |_|
+                                                
+*/
 	private void backpatch(Vector<Integer> list, int number){
 		if(list == null) return;
 		for(int i=0 ; i<list.size() ; i++){
@@ -103,7 +138,6 @@ import java.lang.*;
 			//for prevent double backPatching
 			if(quadruple.get(list.get(i)).result != null) continue;
 			quadruple.get(list.get(i)).result = "" + number;
-			//System.err.println("saasssasdfasdfasdfa"+quadruple.get(i)+"sssss"+number);
 		}
 	}
 	
@@ -111,18 +145,38 @@ import java.lang.*;
 		if(list == null) return;
 		for(int i=0 ; i<list.size() ; i++){
 			if(list.get(i) == -1) continue;
-			System.err.println("!!!  "+ list.get(i) + "@@@@  "+ input);
 			//for prevent double backPatching
 			if(quadruple.get(list.get(i)).result != null) continue;
 			quadruple.get(list.get(i)).firstArg = input;
 		}
 	}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+                _ _   
+  ___ _ __ ___ (_) |_ 
+ / _ \ '_ ` _ \| | __|
+|  __/ | | | | | | |_ 
+ \___|_| |_| |_|_|\__|
+ 
+*/
 	
 	private void emit(String instruction, String arg1, String arg2, String result){
 		QuadrupleRecord record = new QuadrupleRecord(instruction, arg1, arg2, result);
 		quadruple.add(record);
 	}
-	
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+                     _____                
+ _ __   _____      _|_   _| __ ___  _ __  
+| '_ \ / _ \ \ /\ / / | || '_ ` _ \| '_ \ 
+| | | |  __/\ V  V /  | || | | | | | |_) |
+|_| |_|\___| \_/\_/   |_||_| |_| |_| .__/ 
+                                   |_| 
+*/
 	private String newTmp(String type){
 		String tmpName = "tmp" + tmpCounter;
 		symbolTable.add(new SymbolTableRecord(type, tmpName, "\0"));
@@ -130,6 +184,18 @@ import java.lang.*;
 		tmpCounter++;
 		return tmpName;
 	}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+            _       _    ___                  _                  _      
+ _ __  _ __(_)_ __ | |_ / _ \ _   _  __ _  __| |_ __ _   _ _ __ | | ___ 
+| '_ \| '__| | '_ \| __| | | | | | |/ _` |/ _` | '__| | | | '_ \| |/ _ \
+| |_) | |  | | | | | |_| |_| | |_| | (_| | (_| | |  | |_| | |_) | |  __/
+| .__/|_|  |_|_| |_|\__|\__\_\\__,_|\__,_|\__,_|_|   \__,_| .__/|_|\___|
+|_|                                                       |_| 
+
+*/
 	
 	private void printQuadruple(){
 		for(int i=0 ; i<quadruple.size() ; i++){
@@ -142,7 +208,17 @@ import java.lang.*;
 	public static String current_ID = "";
 	public static String current_record = "";
 
-	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ _                     _   ___       _       ____ _____ 
+(_)_ __  ___  ___ _ __| |_|_ _|_ __ | |_ ___/ ___|_   _|
+| | '_ \/ __|/ _ \ '__| __|| || '_ \| __/ _ \___ \ | |  
+| | | | \__ \  __/ |  | |_ | || | | | || (_) |__) || |  
+|_|_| |_|___/\___|_|   \__|___|_| |_|\__\___/____/ |_|
+
+*/
 	void insertIntoST(String varID){
 		System.out.println("INSERTING:  "+ varID);
 		System.out.println("Type:  "+ last_type);
@@ -155,9 +231,19 @@ import java.lang.*;
 		//no occurance found, so we insert
 		symbolTable.add(new SymbolTableRecord(last_type, varID, "\0"));
 	}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+                         _     ___       ____ _____ 
+ ___  ___  __ _ _ __ ___| |__ |_ _|_ __ / ___|_   _|
+/ __|/ _ \/ _` | '__/ __| '_ \ | || '_ \\___ \ | |  
+\__ \  __/ (_| | | | (__| | | || || | | |___) || |  
+|___/\___|\__,_|_|  \___|_| |_|___|_| |_|____/ |_|
 
+*/
 	boolean searchInST(String varID){
-		System.out.print("SEARCHING:  "+ varID);
+		System.out.println("SEARCHING:  "+ varID);
 		for(int i=0 ; i<symbolTable.size() ; i++){
 			if(symbolTable.elementAt(i).name.equals(varID)){
 				return true;
@@ -165,9 +251,21 @@ import java.lang.*;
 		}
 		return false;
 	}
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+            _   ___           _           
+  __ _  ___| |_|_ _|_ __   __| | _____  __
+ / _` |/ _ \ __|| || '_ \ / _` |/ _ \ \/ /
+| (_| |  __/ |_ | || | | | (_| |  __/>  < 
+ \__, |\___|\__|___|_| |_|\__,_|\___/_/\_\
+ |___/
+ 
+*/
 	
 	int getIndex(String varID){
-		System.out.print("SEARCHING:  "+ varID);
+		System.out.println("SEARCHING:  "+ varID);
 		for(int i=0 ; i<symbolTable.size() ; i++){
 			if(symbolTable.elementAt(i).name.equals(varID)){
 				return i;
@@ -175,7 +273,17 @@ import java.lang.*;
 		}
 		return -1;
 	}
-	
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+ _                     _   ____                        _ ___       _       ____ _____ 
+(_)_ __  ___  ___ _ __| |_|  _ \ ___  ___ ___  _ __ __| |_ _|_ __ | |_ ___/ ___|_   _|
+| | '_ \/ __|/ _ \ '__| __| |_) / _ \/ __/ _ \| '__/ _` || || '_ \| __/ _ \___ \ | |  
+| | | | \__ \  __/ |  | |_|  _ <  __/ (_| (_) | | | (_| || || | | | || (_) |__) || |  
+|_|_| |_|___/\___|_|   \__|_| \_\___|\___\___/|_|  \__,_|___|_| |_|\__\___/____/ |_|
+
+*/
 
 	void insertRecordIntoST(){
 		System.out.println("INSERTING:  "+ current_record);
@@ -190,6 +298,25 @@ import java.lang.*;
 		symbolTable.add(new SymbolTableRecord("record", current_record, "\0"));
 	}
 
+	
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+/*
+              ____          _   
+ _   _ _ __  / ___|__ _ ___| |_ 
+| | | | '_ \| |   / _` / __| __|
+| |_| | |_) | |__| (_| \__ \ |_ 
+ \__,_| .__/ \____\__,_|___/\__|
+      |_|                       
+
+*/
+private String upCast(Eval firstArg, Eval secondArg){
+	if(firstArg.type.equals(secondArg.type)){
+		return firstArg.type;
+	}
+	return "";
+}
 }
 
 %%
@@ -221,7 +348,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");};
  | varDeclId COLON simpleExpression {System.out.println("Rule 13 varDeclInitialize : varDeclId : simpleExpression");
   														//////////////////////////////////////////////////////
-														if($3.place==null){
+														if($3.type.equals("bool")){
 														backpatch($3.trueList, quadruple.size());
 														backpatch($3.falseList, quadruple.size()+2);
 														emit("ass","true",null,$1.place);
@@ -302,6 +429,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														emit("ass", $4.place, null, $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////	
  };
  | mutable PLUSEQUAL M expression {System.out.println("Rule 60 expression : mutable += expression");
@@ -315,6 +443,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("plus", $4.place, $1.place, $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////	
  };
  | mutable MINUSEQUAL M expression {System.out.println("Rule 61 expression : mutable -= expression");
@@ -328,6 +457,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("minus", $1.place, $4.place, $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////	
  };
  | mutable MULTIPLYEQUAL M expression {System.out.println("Rule 62 expression : mutable *= expression");
@@ -341,6 +471,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("mult", $4.place, $1.place, $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////
 };
  | mutable DIVIDEQUAL M expression {System.out.println("Rule 63 expression : mutable /= expression");
@@ -354,6 +485,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("div", $1.place, $4.place, $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////
  };
  | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");
@@ -365,6 +497,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("plus", $1.place, "1", $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////
  };
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");
@@ -376,6 +509,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
 														emit("minus", $1.place, "1", $1.place);
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////
  };
  | simpleExpression {System.out.println("Rule 66 expression : simpleExpression");
@@ -384,6 +518,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
 														//////////////////////////////////////////////////////														
  };
  simpleExpression : simpleExpression OR M simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");
@@ -434,41 +569,139 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
 														//////////////////////////////////////////////////////
  };
- | NOT simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");};
+ | NOT simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");
+   														//////////////////////////////////////////////////////
+														  ($$) = new Eval();
+														  //((Eval)$$).place = newTmp("bool");
+														  //boolean result = Boolean.parseBoolean($1.place) & Boolean.parseBoolean($4.place);
+														  //emit("ass", ""+result, null, ((Eval)$$).place);
+														  //((Eval)$$).place=""+result;
+														  ((Eval)$$).type = "bool";
+														  //backpatch($1.falseList, $3.quad);
+														  //backpatch($1.trueList, $3.quad);
+														  ((Eval)$$).trueList = $2.falseList;
+														  ((Eval)$$).falseList = $2.trueList;
+														//////////////////////////////////////////////////////
+ };
  | relExpression {System.out.println("Rule 72 simpleExpression : relExpression");
      													//////////////////////////////////////////////////////
 														$$ = new Eval();
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////	
  };
- relExpression : mathlogicExpression relop mathlogicExpression {System.out.println("Rule 73 relExpression : mathlogicExpression relop mathlogicExpression");};
+ relExpression : mathlogicExpression relop mathlogicExpression {System.out.println("Rule 73 relExpression : mathlogicExpression relop mathlogicExpression");
+      													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).place=newTmp("bool");
+														((Eval)$$).type="bool";
+														emit($2.type,$1.place,$3.place,((Eval)$$).place);
+														((Eval)$$).trueList=Eval.makeList(quadruple.size());
+														emit("if",((Eval)$$).place, null, null);
+														((Eval)$$).falseList=Eval.makeList(quadruple.size());
+														emit("goto",null,null,null);
+														((Eval)$$).nextList=Eval.merge(((Eval)$$).trueList, ((Eval)$$).falseList);
+     													//////////////////////////////////////////////////////														
+														};
  | mathlogicExpression {System.out.println("Rule 74 relExpression : mathlogicExpression");
      													//////////////////////////////////////////////////////
 														$$ = new Eval();
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////	
+														};
+ relop : LE {System.out.println("Rule 75 relop : LE");
+    													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="LE";
+   														//////////////////////////////////////////////////////	
+														};
+ | LT {System.out.println("Rule 76 relop : LT");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="LT";
+   														//////////////////////////////////////////////////////	
+														};
+ | GT {System.out.println("Rule 77 relop : GT");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="GT";
+   														//////////////////////////////////////////////////////	
+														};
+ | GE {System.out.println("Rule 78 relop : GE");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="GE";
+   														//////////////////////////////////////////////////////	
+														};
+ | EQ {System.out.println("Rule 79 relop : EQ");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="EQ";
+   														//////////////////////////////////////////////////////	
+														};
+ | NE {System.out.println("Rule 80 relop : NE");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).type="NE";
+   														//////////////////////////////////////////////////////	
+														};
+ mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression {System.out.println("Rule 81 mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression");
+      													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//!!!TODO:Casting!!!
+														((Eval)$$).place = newTmp($1.type);
+														((Eval)$$).type = $1.type;
+														emit("minus", $1.place, $3.place, ((Eval)$$).place);
+   														//////////////////////////////////////////////////////
  };
- relop : LE {System.out.println("Rule 75 relop : LE");};
- | LT {System.out.println("Rule 76 relop : LT");};
- | GT {System.out.println("Rule 77 relop : GT");};
- | GE {System.out.println("Rule 78 relop : GE");};
- | EQ {System.out.println("Rule 79 relop : EQ");};
- | NE {System.out.println("Rule 80 relop : NE");};
- mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression {System.out.println("Rule 81 mathlogicExpression : mathlogicExpression MATHMIN mathlogicExpression");};
- | mathlogicExpression MATHMUL mathlogicExpression {System.out.println("Rule 82 mathlogicExpression : mathlogicExpression MATHMUL mathlogicExpression");};
- | mathlogicExpression MATHDIV mathlogicExpression {System.out.println("Rule 83 mathlogicExpression : mathlogicExpression MATHDIV mathlogicExpression");};
- | mathlogicExpression MATHPLU mathlogicExpression {System.out.println("Rule 84 mathlogicExpression : mathlogicExpression MATHPLU mathlogicExpression");};
- | mathlogicExpression MATHMOD mathlogicExpression {System.out.println("Rule 85 mathlogicExpression : mathlogicExpression MATHMOD mathlogicExpression");};
+ | mathlogicExpression MATHMUL mathlogicExpression {System.out.println("Rule 82 mathlogicExpression : mathlogicExpression MATHMUL mathlogicExpression");
+       													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//!!!TODO:Casting!!!
+														((Eval)$$).place = newTmp($1.type);
+														((Eval)$$).type = $1.type;
+														emit("mult", $1.place, $3.place, ((Eval)$$).place);
+   														//////////////////////////////////////////////////////
+};
+ | mathlogicExpression MATHDIV mathlogicExpression {System.out.println("Rule 83 mathlogicExpression : mathlogicExpression MATHDIV mathlogicExpression");
+        												//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//!!!TODO:Casting!!!
+														((Eval)$$).place = newTmp($1.type);
+														((Eval)$$).type = $1.type;
+														emit("div", $1.place, $3.place, ((Eval)$$).place);
+   														//////////////////////////////////////////////////////
+ };
+ | mathlogicExpression MATHPLU mathlogicExpression {System.out.println("Rule 84 mathlogicExpression : mathlogicExpression MATHPLU mathlogicExpression");
+        												//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//!!!TODO:Casting!!!
+														((Eval)$$).place = newTmp($1.type);
+														((Eval)$$).type = $1.type;
+														emit("plus", $1.place, $3.place, ((Eval)$$).place);
+   														//////////////////////////////////////////////////////
+ };
+ | mathlogicExpression MATHMOD mathlogicExpression {System.out.println("Rule 85 mathlogicExpression : mathlogicExpression MATHMOD mathlogicExpression");
+        												//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//!!!TODO:Casting!!!
+														((Eval)$$).place = newTmp($1.type);
+														((Eval)$$).type = $1.type;
+														emit("mod", $1.place, $3.place, ((Eval)$$).place);
+   														//////////////////////////////////////////////////////
+ };
  | unaryExpression {System.out.println("Rule 86 mathlogicExpression : unaryExpression");
      													//////////////////////////////////////////////////////
 														$$ = new Eval();
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////	
  };
  unaryExpression : unaryop unaryExpression {System.out.println("Rule 87 unaryExpression : unaryop unaryExpression");};
@@ -478,6 +711,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////	
  };
  unaryop : MATHMIN {System.out.println("Rule 89 unaryop : MATHMIN");};
@@ -489,6 +723,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////	
  };
  | mutable {System.out.println("Rule 93 factor : mutable");};
@@ -499,7 +734,6 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//Implement existance checking in symbolTable
 														
 														((Eval)$$).place = $1.place;
-														System.err.println($1.place);
 														((Eval)$$).type = symbolTable.get(index).type;
 														((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
@@ -516,6 +750,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $2.trueList;
 														((Eval)$$).falseList = $2.falseList;
 														((Eval)$$).place = $2.place;
+														((Eval)$$).type = $2.type;
 														//////////////////////////////////////////////////////	
 };
  | call {System.out.println("Rule 98 immutable : call");};
@@ -525,6 +760,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $1.trueList;
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////															
  };
  call : ID OPEN_PARANTHESIS args CLOSE_PARANTHESIS {System.out.println("Rule 100 call : ID ( args )");};
@@ -532,10 +768,38 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | {System.out.println("Rule 102 args : lamda");};
  argList : argList COMMA expression {System.out.println("Rule 103 argList : argList , expression");};
  | expression {System.out.println("Rule 104 argList : expression");};
- constant : NUMCONST {System.out.println("Rule 105 constant : NUMCONST");};
- | REALCONST {System.out.println("Rule 106 constant : REALCONST");};
- | CHARCONST1 {System.out.println("Rule 107 constant : CHARCONST1");};
- | CHARCONST2 {System.out.println("Rule 108 constant : CHARCONST2");};
+ constant : NUMCONST {System.out.println("Rule 105 constant : NUMCONST");
+   														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = newTmp("int");
+														((Eval)$$).type = "int";
+														emit("ass",$1.place,null,((Eval)$$).place);
+  														//////////////////////////////////////////////////////
+														};
+ | REALCONST {System.out.println("Rule 106 constant : REALCONST");
+    													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = newTmp("real");
+														((Eval)$$).type = "real";
+														emit("ass",$1.place,null,((Eval)$$).place);
+  														//////////////////////////////////////////////////////
+														};
+ | CHARCONST1 {System.out.println("Rule 107 constant : CHARCONST1");
+    													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = newTmp("char");
+														((Eval)$$).type = "char";
+														emit("ass",$1.place,null,((Eval)$$).place);
+  														//////////////////////////////////////////////////////
+														};
+ | CHARCONST2 {System.out.println("Rule 108 constant : CHARCONST2");
+    													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = newTmp("char");
+														((Eval)$$).type = "char";
+														emit("ass",$1.place,null,((Eval)$$).place);
+  														//////////////////////////////////////////////////////
+														};
  | TRUE {System.out.println("Rule 109 constant : TRUE");
    														//////////////////////////////////////////////////////
 														($$) = new Eval();
@@ -633,6 +897,7 @@ class SymbolTableRecord{
 			this.value = value;
 		}
 	}
+
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
