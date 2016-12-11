@@ -317,7 +317,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														emit("plus", $4.place, $1.place, $1.place);
 														//////////////////////////////////////////////////////	
  };
- | mutable MINUSEQUAL expression {System.out.println("Rule 61 expression : mutable -= expression");
+ | mutable MINUSEQUAL M expression {System.out.println("Rule 61 expression : mutable -= expression");
     													//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).place = $1.place;
@@ -330,7 +330,18 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														emit("minus", $4.place, $1.place, $1.place);
 														//////////////////////////////////////////////////////	
  };
- | mutable MULTIPLYEQUAL expression {System.out.println("Rule 62 expression : mutable *= expression");};
+ | mutable MULTIPLYEQUAL M expression {System.out.println("Rule 62 expression : mutable *= expression");
+     													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = $1.place;
+														backpatch($4.trueList, quadruple.size());
+														backpatch($4.falseList, quadruple.size());
+														backpatch($1.nextList, $3.quad);
+														((Eval)$$).trueList = $4.trueList;
+														((Eval)$$).falseList = $4.falseList;
+														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
+														emit("mult", $4.place, $1.place, $1.place);
+														//////////////////////////////////////////////////////};
  | mutable DIVIDEQUAL expression {System.out.println("Rule 63 expression : mutable /= expression");};
  | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");};
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");};
