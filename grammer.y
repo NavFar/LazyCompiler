@@ -304,7 +304,18 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														emit("ass", $4.place, null, $1.place);
 														//////////////////////////////////////////////////////	
  };
- | mutable PLUSEQUAL expression {System.out.println("Rule 60 expression : mutable += expression");};
+ | mutable PLUSEQUAL M expression {System.out.println("Rule 60 expression : mutable += expression");
+   														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = $1.place;
+														backpatch($4.trueList, quadruple.size());
+														backpatch($4.falseList, quadruple.size());
+														backpatch($1.nextList, $3.quad);
+														((Eval)$$).trueList = $4.trueList;
+														((Eval)$$).falseList = $4.falseList;
+														emit("plus", $4.place, $1.place, $1.place);
+														//////////////////////////////////////////////////////	
+ };
  | mutable MINUSEQUAL expression {System.out.println("Rule 61 expression : mutable -= expression");};
  | mutable MULTIPLYEQUAL expression {System.out.println("Rule 62 expression : mutable *= expression");};
  | mutable DIVIDEQUAL expression {System.out.println("Rule 63 expression : mutable /= expression");};
