@@ -409,8 +409,31 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
 														//////////////////////////////////////////////////////
 														};
- | simpleExpression ORELSE simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");};
- | simpleExpression ANDTHEN simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");};
+ | simpleExpression ORELSE M simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");
+ 														//////////////////////////////////////////////////////
+														  ($$) = new Eval();
+														  ((Eval)$$).place = newTmp("bool");
+														  ((Eval)$$).type = "bool";
+														  backpatch($1.trueList, $3.quad);
+														  backpatch($1.falseList, $3.quad);
+														  ((Eval)$$).trueList = Eval.merge($1.trueList, $4.trueList);
+														  ((Eval)$$).falseList = $4.falseList;
+														//////////////////////////////////////////////////////
+ };
+ | simpleExpression ANDTHEN M simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");
+  														//////////////////////////////////////////////////////
+														  ($$) = new Eval();
+														  //((Eval)$$).place = newTmp("bool");
+														  //boolean result = Boolean.parseBoolean($1.place) & Boolean.parseBoolean($4.place);
+														  //emit("ass", ""+result, null, ((Eval)$$).place);
+														  //((Eval)$$).place=""+result;
+														  ((Eval)$$).type = "bool";
+														  backpatch($1.falseList, $3.quad);
+														  backpatch($1.trueList, $3.quad);
+														  ((Eval)$$).trueList = $4.trueList;
+														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
+														//////////////////////////////////////////////////////
+ };
  | NOT simpleExpression {System.out.println("Rule 71 simpleExpression : not simpleExpression");};
  | relExpression {System.out.println("Rule 72 simpleExpression : relExpression");
      													//////////////////////////////////////////////////////
