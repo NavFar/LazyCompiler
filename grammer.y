@@ -327,7 +327,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("minus", $4.place, $1.place, $1.place);
+														emit("minus", $1.place, $4.place, $1.place);
 														//////////////////////////////////////////////////////	
  };
  | mutable MULTIPLYEQUAL M expression {System.out.println("Rule 62 expression : mutable *= expression");
@@ -353,7 +353,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("div", $4.place, $1.place, $1.place);
+														emit("div", $1.place, $4.place, $1.place);
 														//////////////////////////////////////////////////////
  };
  | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");
@@ -364,7 +364,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//((Eval)$$).trueList = $4.trueList;
 														//((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("plus", "1", $1.place, $1.place);
+														emit("plus", $1.place, "1", $1.place);
 														//////////////////////////////////////////////////////
  };
  | mutable MINUSMINUS {System.out.println("Rule 65 expression : mutable--");
@@ -375,7 +375,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//((Eval)$$).trueList = $4.trueList;
 														//((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("minus", "1", $1.place, $1.place);
+														emit("minus", $1.place, "1", $1.place);
 														//////////////////////////////////////////////////////
  };
  | simpleExpression {System.out.println("Rule 66 expression : simpleExpression");
