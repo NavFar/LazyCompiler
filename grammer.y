@@ -526,30 +526,46 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ($$) = new Eval();
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
-														  backpatch($1.falseList, $3.quad);
-														  ((Eval)$$).trueList = Eval.merge($1.trueList, $4.trueList);
-														  ((Eval)$$).falseList = $4.falseList;
+														  backpatch($1.trueList, quadruple.size()-1);
+														  emit("ass", "true", null, ((Eval)$$).place);
+														  emit("goto", null, null, $3.quad + "");
+														  backpatch($1.falseList, quadruple.size()-1);														  
+														  emit("ass", "false", null, ((Eval)$$).place);
+														  emit("goto", null, null, $3.quad + "");
+														  backpatch($4.trueList, quadruple.size());
+														  backpatch($4.falseList, quadruple.size());
+														  emit("+", $4.place,((Eval)$$).place,((Eval)$$).place);	 
+														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
+														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
+														  emit("if", ((Eval)$$).place, null, null);
+														  emit("goto", null, null, null);
 														//////////////////////////////////////////////////////														  
 														  };
  | simpleExpression AND  M simpleExpression {System.out.println("Rule 68 simpleExpression : simpleExpression and simpleExpression");
  														//////////////////////////////////////////////////////
 														  ($$) = new Eval();
-														  //((Eval)$$).place = newTmp("bool");
-														  //boolean result = Boolean.parseBoolean($1.place) & Boolean.parseBoolean($4.place);
-														  //emit("ass", ""+result, null, ((Eval)$$).place);
-														  //((Eval)$$).place=""+result;
+														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
-														  backpatch($1.trueList, $3.quad);
-														  ((Eval)$$).trueList = $4.trueList;
-														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
+														  backpatch($1.trueList, quadruple.size()-1);
+														  emit("ass", "true", null, ((Eval)$$).place);
+														  emit("goto", null, null, $3.quad + "");
+														  backpatch($1.falseList, quadruple.size()-1);														  
+														  emit("ass", "false", null, ((Eval)$$).place);
+														  emit("goto", null, null, $3.quad + "");
+														  backpatch($4.trueList, quadruple.size());
+														  backpatch($4.falseList, quadruple.size());
+														  emit("*", $4.place,((Eval)$$).place,((Eval)$$).place);
+														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
+														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
+														  emit("if", ((Eval)$$).place, null, null);
+														  emit("goto", null, null, null);
 														//////////////////////////////////////////////////////
 														};
  | simpleExpression ORELSE M simpleExpression {System.out.println("Rule 69 simpleExpression : simpleExpression or else simpleExpression");
  														//////////////////////////////////////////////////////
-														  ($$) = new Eval();
+														($$) = new Eval();
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
-														  backpatch($1.trueList, $3.quad);
 														  backpatch($1.falseList, $3.quad);
 														  ((Eval)$$).trueList = Eval.merge($1.trueList, $4.trueList);
 														  ((Eval)$$).falseList = $4.falseList;
@@ -557,13 +573,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  };
  | simpleExpression ANDTHEN M simpleExpression {System.out.println("Rule 70 simpleExpression : simpleExpression and then simpleExpression");
   														//////////////////////////////////////////////////////
-														  ($$) = new Eval();
+														($$) = new Eval();
 														  //((Eval)$$).place = newTmp("bool");
 														  //boolean result = Boolean.parseBoolean($1.place) & Boolean.parseBoolean($4.place);
 														  //emit("ass", ""+result, null, ((Eval)$$).place);
 														  //((Eval)$$).place=""+result;
 														  ((Eval)$$).type = "bool";
-														  backpatch($1.falseList, $3.quad);
 														  backpatch($1.trueList, $3.quad);
 														  ((Eval)$$).trueList = $4.trueList;
 														  ((Eval)$$).falseList = Eval.merge($1.falseList, $4.falseList);
