@@ -31,7 +31,6 @@ if (#ba12 .le #fo12) {
 while (#do43) {
 static int #ho12; // hog in new scope
 #ho12 = #fo12;
-#do43 = #fr77(#fo12++, #ca23) .lt 666;
 if (#ho12 .gt #ba12) break;
 else if (#fo12 .ne 0) #fo12 += 7;
 }

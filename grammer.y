@@ -11,7 +11,7 @@
 %token INT
 %token REAL
 %token BOOL
-%token RECTYPE
+%token <Eval> RECTYPE
 %token <Eval> TRUE
 %token <Eval> FALSE
 %token CHAR
@@ -46,7 +46,7 @@
 %token NE
 %token MATHDIV
 %token MATHMOD
-%token MATHMUL
+%token <Eval> MATHMUL
 %token MATHPLU
 %token MATHMIN
 %token <Eval> NUMCONST
@@ -87,6 +87,19 @@
 %type <Eval> scopedTypeSpecifier
 %type <Eval> funDeclaration
 %type <Eval> expressionStmt
+%type <Eval> paramIdList
+%type <Eval> paramId
+%type <Eval> params
+%type <Eval> argList
+%type <Eval> args
+%type <Eval> paramTypeList
+%type <Eval> paramList
+%type <Eval> returnStmt
+%type <Eval> W
+%type <Eval> call
+%type <Eval> scopedVarDeclaration
+%type <Eval> localDeclarations
+%type <Eval> unaryop
 
 %left OR ORELSE
 %left AND ANDTHEN
@@ -107,6 +120,7 @@ import java.lang.*;
 %}
 %code {
 	int tmpCounter = 0;
+	//Vector<ActivationRecord> funcStack = new Vector<ActivationRecord>();
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -120,6 +134,10 @@ import java.lang.*;
 */
 
 	Vector<SymbolTableRecord> symbolTable = new Vector<SymbolTableRecord>();
+	//SymbolTableRecord funcStack = new SymbolTableRecord("char*", "funcStack[1024]", "");
+	//symbolTable.add(funcStack);
+	//SymbolTableRecord stackPointer = new SymbolTableRecord("int", "stackPointer", "0");
+	//symbolTable.add(stackPointer);
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -181,10 +199,18 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 		for(int i=0 ; i<list.size() ; i++){
 			if(list.get(i) == -1) continue;
 			//for prevent double backPatching
-			if(quadruple.get(list.get(i)).result != null) continue;
+			if(quadruple.get(list.get(i)).firstArg != null) continue;
 			quadruple.get(list.get(i)).firstArg = input;
 		}
 	}
+	
+	/*private void backpatch(int start, int end, String input){//for backPatching function localDeclarations with function name
+		for(int i=start ; i<end ; i++){
+			if("def".equals(quadruple.elementAt(i).instruction)){
+				//quadruple.get(i).secondArg = input+quadruple.elementAt(i).secondArg;
+			}
+		}
+	}*/
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -200,6 +226,10 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 	private void emit(String instruction, String arg1, String arg2, String result){
 		QuadrupleRecord record = new QuadrupleRecord(instruction, arg1, arg2, result);
 		quadruple.add(record);
+		if(instruction.equals("def") && !searchInST(arg2)){
+			SymbolTableRecord str = new SymbolTableRecord(arg1, arg2, result);
+			symbolTable.add(str);
+		}
 	}
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -233,15 +263,114 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 */
 	
 	private void printQuadruple(){
+		String defs = "";
+		String code = "";
+		String tmp = "";
+		boolean inRecord = false;
+		boolean isDef = false;
 		for(int i=0 ; i<quadruple.size() ; i++){
 			QuadrupleRecord r = quadruple.get(i);
 			System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
+			isDef = false;
+			if("record".equals(r.instruction)){
+				inRecord = true;
+				tmp = "struct " + r.secondArg + " {";
+			}else if("end".equals(r.instruction)){
+				tmp = "};";
+			}else if("def".equals(r.instruction)){
+				isDef = true;
+				String tmp2 = "";
+				if("bool".equals(r.firstArg)){
+					tmp2 = "int";
+				}else{tmp2 = r.firstArg;}
+				
+				if(r.result == null){
+					tmp = tmp2 + " " + r.secondArg + ";" ;
+				}else{//it is array
+					tmp = tmp2 + " " + r.secondArg + "[" + r.result + "]" + ";" ;
+				}
+			}else if("ass".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " ;";
+			}else if("goto".equals(r.instruction)){
+				String tmp2 = "L";
+				if(r.result == null){
+					tmp2 = tmp2 + (i+1);
+				}else if("*funcStack[stackPointer]".equals(r.result)){
+					tmp2 = r.result;
+				}else{
+					tmp2 = tmp2 + r.result;
+				}
+				tmp = "goto " + tmp2 + ";" ;
+			}else if("EQ".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " == " + r.secondArg + " ) \t" + r.result + " = 1;" ; 
+			}else if("if".equals(r.instruction)){
+				String tmp2 = "L";
+				if(r.result == null){
+					tmp2 = tmp2 + (i+1);
+				}else if("*funcStack[stackPointer]".equals(r.result)){
+					tmp2 = r.result;
+				}
+				else{
+					tmp2 = tmp2 + r.result;
+				}
+				tmp = "if( " + r.firstArg + " )  goto " + tmp2 + ";" ;
+			}else if("plus".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " + " + r.secondArg + " ;" ;
+			}else if("minus".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " - " + r.secondArg + " ;" ;
+			}else if("mult".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " * " + r.secondArg + " ;" ;
+			}else if("div".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " / " + r.secondArg + " ;" ;
+			}else if("LT".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " < " + r.secondArg + " ) \t" + r.result + " = 1;" ;
+			}else if("LE".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " <= " + r.secondArg + " ) \t" + r.result + " = 1;" ;
+			}else if("GT".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " > " + r.secondArg + " ) \t" + r.result + " = 1;" ;
+			}else if("GE".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " >= " + r.secondArg + " ) \t" + r.result + " = 1;" ;
+			}else if("NE".equals(r.instruction)){
+				tmp = r.result + " = 0; \t" ;
+				tmp = tmp + "if(" + " " + r.firstArg + " != " + r.secondArg + " ) \t" + r.result + " = 1;" ;
+			}else if("mod".equals(r.instruction)){
+				tmp = r.result + " = " + r.firstArg + " % " + r.secondArg + " ;" ;
+			}else if("rand".equals(r.instruction)){
+				tmp = r.result + " = " + "rand();" ;
+			}
+		
+			if(inRecord || isDef){
+				defs = defs + tmp + "\n" ;
+				code = code + "L" + i + ": \t //Def was here \n" ;
+				if(tmp.equals("};")){
+					inRecord = false;
+				}
+			}else{
+				tmp = "L" + i + ":\t" + tmp;
+				code = code + tmp + "\n" ;
+			}
+			
+			tmp = "";
 		}
+		defs = defs.replaceAll("#","");
+		code = code.replaceAll("#","");
+		code = "#include<stdio.h> \n int stackPointer = 0; \n void* funcStack[1024]; \n" + 
+				defs + "\n\n int main(){ \n\t funckStack[stackPointer] = &&L" + quadruple.size() + ";\n" + code + "L" + quadruple.size() + ":\treturn 0;\n}";
+		
+		System.out.println(code);
 	}
 
 	public static String last_type = "";
 	public static String current_ID = "";
 	public static String current_record = "";
+	private boolean isInFunction = false;
+	private String currentFunctionName = "";
+	private int currentFunctionQuad;
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -257,24 +386,38 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 	void insertIntoST(String varID){
 		System.out.println("INSERTING:  "+ varID);
 		System.out.println("Type:  "+ last_type);
+		String fullName = currentFunctionName + varID;
 		for(int i=0 ; i<symbolTable.size() ; i++){
-			/*if(symbolTable.elementAt(i).name.equals(varID)){
+			if(varID.equals(symbolTable.elementAt(i).name)){
 				yyerror("duplicate var declaration\n");
 				return;
-			}*/
+			}else if(fullName.equals(symbolTable.elementAt(i).name)){
+				
+			}
 		}
 		//no occurance found, so we insert
 		symbolTable.add(new SymbolTableRecord(last_type, varID, "\0"));
 	}
 	
-	void insertIntoST(String funcName, String quadLine){
+	void insertIntoST(String funcName, String quadLine, Vector<String> params, String returnPlace){
+		System.out.println("!!!!"+ funcName);
 		for(int i=0 ; i<symbolTable.size() ; i++){
-			if(symbolTable.elementAt(i).name.equals(varID)){
+			if(symbolTable.elementAt(i).name.equals(funcName) && symbolTable.elementAt(i).type.equals("func") ){
 				yyerror("duplicate function declaration\n");
 				return;
 			}
 		}
-		symbolTable.add(new SymbolTableRecord("func", funcName, quadLine));
+		SymbolTableRecord str = new SymbolTableRecord("func", funcName, quadLine);
+		if(params != null){
+			for(int i=0 ; i<params.size() ; i++){
+				String paramName = funcName + params.elementAt(i);
+				params.set(i, paramName);
+			}
+		}
+		str.params = params;
+		str.returnPlace = returnPlace;
+		//System.out.println("@@@@@@@@" + returnPlace);
+		symbolTable.add(str);
 	}
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -296,6 +439,25 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 		}
 		return false;
 	}
+	SymbolTableRecord searchInST2(String varID){
+		System.out.println("SEARCHING:  "+ varID);
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			if(symbolTable.elementAt(i).name.equals(varID)){
+				return symbolTable.elementAt(i);
+			}
+		}
+		return null;
+	}
+	
+	SymbolTableRecord searchInSTForFunc(String funcName){
+		System.out.println("SEARCHING:  "+ funcName);
+		for(int i=0 ; i<symbolTable.size() ; i++){
+			if(symbolTable.elementAt(i).name.equals(funcName) && symbolTable.elementAt(i).type.equals("func")){
+				return symbolTable.elementAt(i);
+			}
+		}
+		return null;
+	}
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
@@ -311,8 +473,22 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 	
 	int getIndex(String varID){
 		System.out.println("SEARCHING:  "+ varID);
-		for(int i=0 ; i<symbolTable.size() ; i++){
-			if(symbolTable.elementAt(i).name.equals(varID)){
+		for(int i=0 ; i<quadruple.size() ; i++){
+			if(varID.equals(quadruple.elementAt(i).secondArg)){
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	int getIndexRanged(String varID, int start, int end, String instruction){
+		//System.out.println("SEARCHING:  "+ varID);
+		for(int i=0 ; i<quadruple.size() ; i++){
+			QuadrupleRecord r = quadruple.get(i);
+		System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
+		}	
+		for(int i=start ; i<end ; i++){
+			if(varID.equals(quadruple.elementAt(i).secondArg) && instruction.equals(quadruple.elementAt(i).instruction)){
 				return i;
 			}
 		}
@@ -379,56 +555,125 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  declaration : varDeclaration {System.out.println("Rule 4 declaration : varDeclaration");};
  | funDeclaration {System.out.println("Rule 5 declaration : funDeclaration");};
  | recDeclaration {System.out.println("Rule 6 declaration : recDeclaration");};
- recDeclaration : RECORD ID OPEN_BRACE localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }"); insertRecordIntoST();};
+ recDeclaration : RECORD ID OPEN_BRACE M localDeclarations CLOSE_BRACE {System.out.println("Rule 7 recDeclaration : record ID { localDeclarations }");
+   														//////////////////////////////////////////////////////
+														insertRecordIntoST();
+														//System.out.println("#################"+$4.typeList);
+														emit("record", null, $2.place, null);
+														for(int i=0 ; i<$5.paramList.size() ; i++){
+															QuadrupleRecord qr = quadruple.elementAt($5.typeList.elementAt(i));
+															String type = qr.firstArg;
+															emit("def", type, $5.paramList.elementAt(i), null);
+														}
+														//System.out.println("#################"+$4.quad);
+														//System.out.println("#################"+(quadruple.size() - $5.paramList.size() -1));
+														int Qsize = quadruple.size();
+														for(int i=$4.quad ; i< Qsize - $5.paramList.size()-1 ; i++){
+															if($5.paramList.contains(quadruple.elementAt($4.quad).secondArg) && quadruple.elementAt($4.quad).instruction.equals("def")){
+																
+															}else{
+																emit(quadruple.elementAt($4.quad).instruction, quadruple.elementAt($4.quad).firstArg,
+																quadruple.elementAt($4.quad).secondArg, quadruple.elementAt($4.quad).result);
+															}
+															quadruple.remove($4.quad);
+														
+														}
+														emit("end", null, null, null);
+  														//////////////////////////////////////////////////////														
+														};
  varDeclaration : typeSpecifier varDeclList SEMICOLON {System.out.println("Rule 8 varDeclaration : typeSpecifier varDeclList ;");
   														//////////////////////////////////////////////////////
 														backpatch($2.typeList, $1.type);
+														//System.out.println("#################"+$1.type);
  														//////////////////////////////////////////////////////														
  };
  scopedVarDeclaration : scopedTypeSpecifier varDeclList SEMICOLON {System.out.println("Rule 9 scopedVarDeclaration : scopedTypeSpecifier varDeclList ;");
    														//////////////////////////////////////////////////////
 														backpatch($2.typeList, $1.type);
+														
+														//System.out.println("#################"+$2.typeList);
+														($$) = new Eval();
+														((Eval)$$).paramList = $2.paramList;
+														((Eval)$$).typeList = $2.typeList;
  														//////////////////////////////////////////////////////
  };
  varDeclList : varDeclList COMMA varDeclInitialize {System.out.println("Rule 10 varDeclList : varDeclList , varDeclInitialize");
  														//////////////////////////////////////////////////////
 														$$ = new Eval();
 														((Eval)$$).typeList = Eval.merge($1.typeList,$3.typeList);
+														((Eval)$$).paramList = Eval.mergeString($1.paramList, $3.paramList);
 														//////////////////////////////////////////////////////														
 														};
  | varDeclInitialize {System.out.println("Rule 11 varDeclList : varDeclInitialize");
  														//////////////////////////////////////////////////////
 														$$ = new Eval();
 														((Eval)$$).typeList = $1.typeList;
+														((Eval)$$).paramList = $1.paramList;
 														//////////////////////////////////////////////////////														
 };
- varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");};
+ varDeclInitialize : varDeclId {System.out.println("Rule 12 varDeclInitialize : varDeclId");
+   														//////////////////////////////////////////////////////
+														((Eval)$$).paramList = $1.paramList;
+														((Eval)$$).typeList = $1.typeList;
+  														//////////////////////////////////////////////////////														
+ };
  | varDeclId COLON simpleExpression {System.out.println("Rule 13 varDeclInitialize : varDeclId : simpleExpression");
   														//////////////////////////////////////////////////////
-														if($3.type.equals("bool")){
+														if("bool".equals($3.type)){
 														backpatch($3.trueList, quadruple.size());
 														backpatch($3.falseList, quadruple.size()+2);
-														emit("ass","true",null,$1.place);
+														emit("ass","1",null,$1.place);
 														emit("goto",null,null,"" + (quadruple.size()+2));
-														emit("ass","false",null,$1.place);
+														emit("ass","0",null,$1.place);
 														}
-														else{
+														else if(! $3.type.equals("func")){
 														emit("ass",$3.place,null,$1.place);
+														}else{
+															emit("ass",$3.returnPlace,null,$1.place);
 														}
+														($$) = new Eval();
+														((Eval)$$).paramList = $1.paramList;
+														((Eval)$$).typeList = $1.typeList;
  														//////////////////////////////////////////////////////														
 														};
  varDeclId : ID {System.out.println("Rule 14 varDeclId : ID");
  														//////////////////////////////////////////////////////
-														insertIntoST(current_ID);
+														String funcName = "";
+														if(isInFunction) funcName = currentFunctionName;
+														insertIntoST(funcName + $1.place);
 														$$ = new Eval();
-														((Eval)$$).place = $1.place;
+														((Eval)$$).place = funcName + $1.place;
+														Vector<String> tmp = new Vector<String>();
+														tmp.add(funcName + $1.place);
+														((Eval)$$).paramList = tmp;
 														((Eval)$$).typeList = Eval.makeList(quadruple.size());
-														emit("def",null,$1.place,null);
+														emit("def",null,funcName + $1.place,null);
 														//////////////////////////////////////////////////////														
 														};
- | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]"); insertIntoST(current_ID);};
- scopedTypeSpecifier : STATIC typeSpecifier {System.out.println("Rule 16 scopedTypeSpecifier : STATIC typeSpecifier");};
- | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");};
+ | ID OPEN_BRACKET NUMCONST CLOSE_BRACKET {System.out.println("Rule 15 varDeclId : ID [ NUMCONST ]");
+														//////////////////////////////////////////////////////
+														//insertIntoST(current_ID);
+														($$) = new Eval();
+														((Eval)$$).place = $1.place;
+														Vector<String> tmp = new Vector<String>();
+														tmp.add($1.place);
+														((Eval)$$).paramList = tmp;
+														((Eval)$$).typeList = Eval.makeList(quadruple.size());
+														emit("def",null,$1.place,$3.place);
+ };														
+														//////////////////////////////////////////////////////														
+ scopedTypeSpecifier : STATIC typeSpecifier {System.out.println("Rule 16 scopedTypeSpecifier : STATIC typeSpecifier");
+ 														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).type = "static " + $2.type;
+														//////////////////////////////////////////////////////														
+ };
+ | typeSpecifier {System.out.println("Rule 17 scopedTypeSpecifier : typeSpecifier");
+  														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).type = $1.type;
+														//////////////////////////////////////////////////////
+ };
  typeSpecifier : returnTypeSpecifier {System.out.println("Rule 18 typeSpecifier : returnTypeSpecifier");
  														//////////////////////////////////////////////////////
 														last_type = yylexer.getLVal().toString();
@@ -436,7 +681,13 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).type = $1.type;
  														//////////////////////////////////////////////////////														
 														};
- | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE"); last_type = yylexer.getLVal().toString();};
+ | RECTYPE {System.out.println("Rule 19 typeSpecifier : RECTYPE"); last_type = yylexer.getLVal().toString();
+   														//////////////////////////////////////////////////////
+														last_type = yylexer.getLVal().toString();
+														$$ = new Eval();
+														((Eval)$$).type = $1.place;
+  														//////////////////////////////////////////////////////														
+ };
  returnTypeSpecifier : INT {System.out.println("Rule 20 returnTypeSpecifier : int");
   														//////////////////////////////////////////////////////
 														$$ = new Eval();
@@ -461,37 +712,128 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).type = "char";
  														//////////////////////////////////////////////////////	
  };
- funDeclaration : typeSpecifier ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS statement {System.out.println("Rule 24 funDeclaration : typeSpecifier ID ( params ) statement");
+ funDeclaration : typeSpecifier ID OPEN_PARANTHESIS W params CLOSE_PARANTHESIS statement {System.out.println("Rule 24 funDeclaration : typeSpecifier ID ( params ) statement");
+          												//////////////////////////////////////////////////////
+														isInFunction = false;
+														($$) = new Eval();
+														((Eval)$$).place = $7.place;
+														//System.out.println("!!!!!!!!!!!!!!!"+ $5.quad);
+														backpatch($7.nextList, quadruple.size());
+														if(!$2.place.equals("#aa11")){
+															QuadrupleRecord qr = quadruple.elementAt($4.quad);
+															qr.result = "" + (quadruple.size() + 1);
+															quadruple.set($4.quad, qr);
+														}
+														//backPatching local vars names
+														//backpatch($4.quad, quadruple.size(), $2.place);
+														
+														insertIntoST($2.place, ($4.quad + 1) + "", $5.paramList, $7.returnPlace);
+														emit("goto", null, null, "*funcStack[stackPointer]");
+       													//////////////////////////////////////////////////////
+ };
+ | ID OPEN_PARANTHESIS W params CLOSE_PARANTHESIS statement {System.out.println("Rule 25 funDeclaration : ID ( params ) statement");
+         												//////////////////////////////////////////////////////
+														isInFunction = false;
+														($$) = new Eval();
+														((Eval)$$).place = $6.place;
+														backpatch($6.nextList, quadruple.size());
+														if(!$1.place.equals("#aa11")){
+															QuadrupleRecord qr = quadruple.elementAt($3.quad);
+															qr.result = "" + (quadruple.size() + 1);
+															quadruple.set($3.quad, qr);
+														}
+														//backPatching local vars names
+														//backpatch($3.quad, quadruple.size(), $1.place);
+														insertIntoST($1.place, ($3.quad + 1) + "", $4.paramList, $6.returnPlace);
+														emit("goto", null, null, "*funcStack[stackPointer]");
+       													//////////////////////////////////////////////////////
+ };
+ 
+ W : {
+	 isInFunction = true;
+	 currentFunctionName = current_ID;
+	($$) = new Eval();
+	((Eval)$$).quad = quadruple.size();
+	currentFunctionQuad = ((Eval)$$).quad;
+	//System.out.println(((Eval)$$).quad);
+	emit("goto", null, null, null);
+ };
+ 
+ /*Y : {
+	 ($$) = new Eval();
+	((Eval)$$).quad = quadruple.size();
+	emit("goto", null, null, null);
+ };*/
+ 
+ params : paramList {System.out.println("Rule 26 params : paramList");
+            											//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = $1.paramList;
+         												//////////////////////////////////////////////////////
+ };
+ | {System.out.println("Rule 27 params : lamda");};
+ paramList : paramList SEMICOLON paramTypeList {System.out.println("Rule 28 paramList : paramList ; paramTypeList");
+            											//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = Eval.mergeString($1.paramList, $3.paramList);
+         												//////////////////////////////////////////////////////
+ };
+ | paramTypeList {System.out.println("Rule 29 paramList : paramTypeList");
+            											//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = $1.paramList;
+         												//////////////////////////////////////////////////////
+ };
+ paramTypeList : typeSpecifier paramIdList {System.out.println("Rule 30 paramTypeList : typeSpecifier paramIdList");
+           												//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = $2.paramList;
+														last_type = $1.type;
+														for(int i=0 ; i<$2.paramList.size() ; i++){
+															String properName = $2.paramList.elementAt(i);
+															if(properName.contains("[100]")){
+																properName = properName.substring(0,5);
+																emit("def", last_type, currentFunctionName + properName,
+																"100");
+															}else{
+																emit("def", last_type, currentFunctionName + properName,
+																null);
+															}	
+															insertIntoST(properName);
+														}
+         												//////////////////////////////////////////////////////
+ };
+ paramIdList : paramIdList COMMA paramId {System.out.println("Rule 31 paramIdList : paramIdList , paramId");
+           												//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = Eval.mergeString($1.paramList, $3.paramList);
+         												//////////////////////////////////////////////////////
+ };
+ | paramId {System.out.println("Rule 32 paramIdList : paramId");
+           												//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = $1.paramList;
+         												//////////////////////////////////////////////////////
+ };
+ paramId : ID {System.out.println("Rule 33 paramId : ID");
+           												//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = Eval.makeList($1.place);
+														//System.out.println(((Eval)$$).paramList);
+         												//////////////////////////////////////////////////////
+ };
+ | ID OPEN_BRACKET CLOSE_BRACKET {System.out.println("Rule 34 paramId : ID[]");
           												//////////////////////////////////////////////////////
 														($$) = new Eval();
-														backpatch($6.nextList, quadruple.size());
-														insertIntoST();
-       													//////////////////////////////////////////////////////
+														((Eval)$$).paramList = Eval.makeList($1.place+"[100]");
+         												//////////////////////////////////////////////////////														
  };
- | ID OPEN_PARANTHESIS params CLOSE_PARANTHESIS M T statement {System.out.println("Rule 25 funDeclaration : ID ( params ) statement");
-         												//////////////////////////////////////////////////////
-														($$) = new Eval();
-														backpatch($6.nextList, quadruple.size());
-														insertIntoST($1.place, $5.quad);
-														
-       													//////////////////////////////////////////////////////
- };
- 
- T : {}
- 
- params : paramList {System.out.println("Rule 26 params : paramList");};
- | {System.out.println("Rule 27 params : lamda");};
- paramList : paramList SEMICOLON paramTypeList {System.out.println("Rule 28 paramList : paramList ; paramTypeList");};
- | paramTypeList {System.out.println("Rule 29 paramList : paramTypeList");};
- paramTypeList : typeSpecifier paramIdList {System.out.println("Rule 30 paramTypeList : typeSpecifier paramIdList");};
- paramIdList : paramIdList COMMA paramId {System.out.println("Rule 31 paramIdList : paramIdList , paramId");};
- | paramId {System.out.println("Rule 32 paramIdList : paramId");};
- paramId : ID {System.out.println("Rule 33 paramId : ID");};
- | ID OPEN_BRACKET CLOSE_BRACKET {System.out.println("Rule 34 paramId : ID[]");};
  statement : expressionStmt {System.out.println("Rule 35 statement : expressionStmt");
          												//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).nextList = $1.nextList;
+														((Eval)$$).place = $1.place;
+														((Eval)$$).returnPlace = $1.returnPlace;
        													//////////////////////////////////////////////////////
  };
  | compoundStmt {System.out.println("Rule 36 statement : compoundStmt");
@@ -499,6 +841,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														($$) = new Eval();
 														((Eval)$$).breakList = $1.breakList;
 														((Eval)$$).nextList = $1.nextList;
+														((Eval)$$).returnPlace = $1.returnPlace;
        													//////////////////////////////////////////////////////														
  };
  | selectionStmt {System.out.println("Rule 37 statement : selectionStmt");
@@ -515,7 +858,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).nextList = $1.nextList;
      													//////////////////////////////////////////////////////	
  };
- | returnStmt {System.out.println("Rule 39 statement : returnStmt");};
+ | returnStmt {System.out.println("Rule 39 statement : returnStmt");
+       													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).returnPlace = $1.returnPlace;
+      													//////////////////////////////////////////////////////														
+ };
  | breakStmt {System.out.println("Rule 40 statement : breakStmt");
       													//////////////////////////////////////////////////////
 														($$) = new Eval();
@@ -526,19 +874,35 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
         												//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).breakList = $3.breakList;
+														((Eval)$$).returnPlace = $3.returnPlace;
        													//////////////////////////////////////////////////////															
  };
- localDeclarations : localDeclarations scopedVarDeclaration {System.out.println("Rule 42 localDeclarations : localDeclarations scopedVarDeclaration");};
- | {System.out.println("Rule 43 localDeclarations : lamda");};
+ localDeclarations : localDeclarations scopedVarDeclaration {System.out.println("Rule 42 localDeclarations : localDeclarations scopedVarDeclaration");
+        												//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = Eval.mergeString($1.paramList, $2.paramList);
+														((Eval)$$).typeList = Eval.merge($1.typeList, $2.typeList);
+       													//////////////////////////////////////////////////////															
+ };
+ | {System.out.println("Rule 43 localDeclarations : lamda");
+        												//////////////////////////////////////////////////////
+														($$) = new Eval();
+       													//////////////////////////////////////////////////////						
+ };
  statementList : statementList statement {System.out.println("Rule 44 statementList : statementList statement");
        													//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).breakList = Eval.merge($1.breakList,$2.breakList);
-														
+														((Eval)$$).returnPlace = $2.returnPlace;
       													//////////////////////////////////////////////////////														
  };
  | {System.out.println("Rule 45 statementList : lamda");};
- expressionStmt : expression SEMICOLON {System.out.println("Rule 46 expressionStmt : expression ;");};
+ expressionStmt : expression SEMICOLON {System.out.println("Rule 46 expressionStmt : expression ;");
+            											//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).returnPlace = $1.returnPlace;
+           												//////////////////////////////////////////////////////															
+ };
  | SEMICOLON {System.out.println("Rule 47 expressionStmt : ;");};
  selectionStmt : IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement ELSE statement   {System.out.println("Rule 49 selectionStmt : IF ( simpleExpression ) statement ELSE statement");};
  |IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement %prec p {System.out.println("Rule 48 selectionStmt : IF ( simpleExpression ) statement");};
@@ -549,15 +913,15 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														QuadrupleRecord sc = quadruple.elementAt($5.quad - 1);
 														sc.result = "" + (quadruple.size()+1);
 														quadruple.set($5.quad - 1, sc);
-														backpatch($6.breakList, (quadruple.size()+1)+3*cases.size());
-														emit("goto", null, null, (quadruple.size()+1)+3*cases.size() + "");
+														backpatch($6.breakList, (quadruple.size()+1)+3*cases.size()+1);
+														emit("goto", null, null, ((quadruple.size()+1)+3*cases.size()+1) + "");
 														
 														for(int i=0 ; i<cases.size() ; i++){
 															String tmp = newTmp("int");
 															emit("EQ", cases.elementAt(i).value + "", $3.place, tmp);
 															emit("if", tmp, null, cases.elementAt(i).quadLine + "");
 														}
-														
+														emit("goto", null, null, $7.quad + "");
 														cases.clear();
           												//////////////////////////////////////////////////////														
  };
@@ -590,10 +954,11 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														cases.add(sc);
        													//////////////////////////////////////////////////////
  };
- defaultElement : DEFAULT COLON statement SEMICOLON {System.out.println("Rule 53 defaultElement : DEFAULT : statement ;");
+ defaultElement : DEFAULT COLON M statement SEMICOLON {System.out.println("Rule 53 defaultElement : DEFAULT : statement ;");
          												//////////////////////////////////////////////////////
 														($$) = new Eval();
-														((Eval)$$).breakList = $3.breakList;
+														((Eval)$$).breakList = $4.breakList;
+														((Eval)$$).quad = $3.quad;
        													//////////////////////////////////////////////////////
  };
  | {System.out.println("Rule 54 defaultElement : lamda");};
@@ -609,7 +974,13 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
      													//////////////////////////////////////////////////////												
  };
  returnStmt : RETURN SEMICOLON {System.out.println("Rule 56 returnStmt : return ;");};
- | RETURN expression SEMICOLON {System.out.println("Rule 57 returnStmt : return expression ;");};
+ | RETURN expression SEMICOLON {System.out.println("Rule 57 returnStmt : return expression ;");
+       													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).returnPlace = $2.place;
+														
+      													//////////////////////////////////////////////////////														
+ };
  breakStmt : BREAK SEMICOLON {System.out.println("Rule 58 breakStmt : break ;");
       													//////////////////////////////////////////////////////
 														($$) = new Eval();
@@ -717,6 +1088,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
 														//////////////////////////////////////////////////////														
  };
  simpleExpression : simpleExpression OR M simpleExpression {System.out.println("Rule 67 simpleExpression : simpleExpression OR simpleExpression");
@@ -725,14 +1097,14 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
 														  backpatch($1.trueList, quadruple.size()-1);
-														  emit("ass", "true", null, ((Eval)$$).place);
+														  emit("ass", "1", null, ((Eval)$$).place);
 														  emit("goto", null, null, $3.quad + "");
 														  backpatch($1.falseList, quadruple.size()-1);														  
-														  emit("ass", "false", null, ((Eval)$$).place);
+														  emit("ass", "0", null, ((Eval)$$).place);
 														  emit("goto", null, null, $3.quad + "");
 														  backpatch($4.trueList, quadruple.size());
 														  backpatch($4.falseList, quadruple.size());
-														  emit("+", $4.place,((Eval)$$).place,((Eval)$$).place);	 
+														  emit("plus", $4.place,((Eval)$$).place,((Eval)$$).place);	 
 														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
 														  emit("if", ((Eval)$$).place, null, null);
@@ -745,14 +1117,14 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
 														  backpatch($1.trueList, quadruple.size()-1);
-														  emit("ass", "true", null, ((Eval)$$).place);
+														  emit("ass", "1", null, ((Eval)$$).place);
 														  emit("goto", null, null, $3.quad + "");
 														  backpatch($1.falseList, quadruple.size()-1);														  
-														  emit("ass", "false", null, ((Eval)$$).place);
+														  emit("ass", "0", null, ((Eval)$$).place);
 														  emit("goto", null, null, $3.quad + "");
 														  backpatch($4.trueList, quadruple.size());
 														  backpatch($4.falseList, quadruple.size());
-														  emit("*", $4.place,((Eval)$$).place,((Eval)$$).place);
+														  emit("mult", $4.place,((Eval)$$).place,((Eval)$$).place);
 														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
 														  emit("if", ((Eval)$$).place, null, null);
@@ -803,6 +1175,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
    														//////////////////////////////////////////////////////	
  };
  relExpression : mathlogicExpression relop mathlogicExpression {System.out.println("Rule 73 relExpression : mathlogicExpression relop mathlogicExpression");
@@ -825,6 +1198,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
    														//////////////////////////////////////////////////////	
 														};
  relop : LE {System.out.println("Rule 75 relop : LE");
@@ -915,9 +1289,36 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
    														//////////////////////////////////////////////////////	
  };
- unaryExpression : unaryop unaryExpression {System.out.println("Rule 87 unaryExpression : unaryop unaryExpression");};
+ unaryExpression : unaryop unaryExpression {System.out.println("Rule 87 unaryExpression : unaryop unaryExpression");
+      													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														if($1.place.equals("*")){
+															SymbolTableRecord str = searchInST2($2.place);
+															if(str == null){
+																System.out.println("NullPointerException");
+																return -1;
+															}
+															
+															((Eval)$$).place = str.value;
+															//System.out.println("!!!!!!!!!!!!!" + str.value);
+														
+														}else if($1.place.equals("-")){
+															((Eval)$$).place = "-" + $2.place;
+														}else if($1.place.equals("?")){
+															if($2.place.charAt(0) == '-'){
+																$2.place = $2.place.substring(1);
+															}
+															((Eval)$$).place = newTmp("int");
+															emit("rand", null, null, ((Eval)$$).place);
+															emit("div", ((Eval)$$).place, $2.place, ((Eval)$$).place);
+														}
+														
+														((Eval)$$).type = $1.type;
+     													//////////////////////////////////////////////////////														
+ };
  | factor {System.out.println("Rule 88 unaryExpression : factor");
      													//////////////////////////////////////////////////////
 														$$ = new Eval();
@@ -925,11 +1326,30 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
    														//////////////////////////////////////////////////////	
  };
- unaryop : MATHMIN {System.out.println("Rule 89 unaryop : MATHMIN");};
- | MATHMUL {System.out.println("Rule 90 unaryop : MATHMUL");};
- | QUESTIONSIGN {System.out.println("Rule 91 unaryop : QUESTIONSIGN");};
+ unaryop : MATHMIN {System.out.println("Rule 89 unaryop : MATHMIN");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).place = "-";
+														((Eval)$$).type = "int";
+   														//////////////////////////////////////////////////////
+ };
+ | MATHMUL {System.out.println("Rule 90 unaryop : MATHMUL");
+    													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).place = "*";
+														((Eval)$$).type = "int";
+   														//////////////////////////////////////////////////////														
+ };
+ | QUESTIONSIGN {System.out.println("Rule 91 unaryop : QUESTIONSIGN");
+     													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														((Eval)$$).place = "?";
+														((Eval)$$).type = "int";
+   														//////////////////////////////////////////////////////
+ };
  factor : immutable {System.out.println("Rule 92 factor : immutable");
      													//////////////////////////////////////////////////////
 														$$ = new Eval();
@@ -937,26 +1357,67 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $1.returnPlace;
    														//////////////////////////////////////////////////////	
  };
- | mutable {System.out.println("Rule 93 factor : mutable");};
+ | mutable {System.out.println("Rule 93 factor : mutable");
+      													//////////////////////////////////////////////////////
+														$$ = new Eval();
+														//((Eval)$$).trueList = $1.trueList;
+														//((Eval)$$).falseList = $1.falseList;
+														((Eval)$$).place = $1.place;
+														((Eval)$$).type = $1.type;
+   														//////////////////////////////////////////////////////
+ };
  mutable : ID {System.out.println("Rule 94 mutable : ID");
   														//////////////////////////////////////////////////////
 														($$) = new Eval();
-														int index = getIndex($1.place);
-														//Implement existance checking in symbolTable
-														
-														((Eval)$$).place = $1.place;
-														((Eval)$$).type = symbolTable.get(index).type;
-														((Eval)$$).trueList = Eval.makeList(quadruple.size());
-														((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
-														((Eval)$$).nextList = Eval.merge(((Eval)$$).trueList, ((Eval)$$).falseList);
-														emit("if", ((Eval)$$).place, null, null);
-														emit("goto", null,null,null);
+														boolean done = false;
+														if(isInFunction){
+															int index = getIndexRanged(currentFunctionName+$1.place,
+															currentFunctionQuad, quadruple.size(), "def");
+															if(index != -1){
+																((Eval)$$).place = currentFunctionName+$1.place;
+																((Eval)$$).type = quadruple.get(index).firstArg;
+																((Eval)$$).trueList = Eval.makeList(quadruple.size());
+																((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
+																((Eval)$$).nextList = Eval.merge(((Eval)$$).trueList, ((Eval)$$).falseList);
+																emit("if", ((Eval)$$).place, null, null);
+																emit("goto", null,null,null);
+																done = true;
+															}
+														}
+														if(!done){
+															int index = getIndex($1.place);
+															//Implement existance checking in symbolTable
+															
+															((Eval)$$).place = $1.place;
+															((Eval)$$).type = quadruple.get(index).firstArg;
+															//System.out.println("#@#%$&&$#&$%&%$&" + ((Eval)$$).type);
+															((Eval)$$).trueList = Eval.makeList(quadruple.size());
+															((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
+															((Eval)$$).nextList = Eval.merge(((Eval)$$).trueList, ((Eval)$$).falseList);
+															emit("if", ((Eval)$$).place, null, null);
+															emit("goto", null,null,null);
+														}
 														//////////////////////////////////////////////////////
  };
- | mutable OPEN_BRACKET expression CLOSE_BRACKET {System.out.println("Rule 95 mutable : mutable [ expression ]");};
- | mutable DOT ID {System.out.println("Rule 96 mutable : mutable DOT ID");};
+ | mutable OPEN_BRACKET expression CLOSE_BRACKET {System.out.println("Rule 95 mutable : mutable [ expression ]");
+   														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = $1.place + "[" + $3.place + "]";
+														((Eval)$$).type = $1.type;
+  														//////////////////////////////////////////////////////														
+ };
+ | mutable DOT ID {System.out.println("Rule 96 mutable : mutable DOT ID");
+   														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).place = $1.place + "." + $3.place;
+														((Eval)$$).type = $3.type;
+														int index = getIndex($3.place);
+														((Eval)$$).type = quadruple.get(index).firstArg;
+  														//////////////////////////////////////////////////////														
+ };
  immutable : OPEN_PARANTHESIS expression CLOSE_PARANTHESIS {System.out.println("Rule 97 immutable : ( expression )");
   														//////////////////////////////////////////////////////
 														($$) = new Eval();
@@ -966,7 +1427,16 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).type = $2.type;
 														//////////////////////////////////////////////////////	
 };
- | call {System.out.println("Rule 98 immutable : call");};
+ | call {System.out.println("Rule 98 immutable : call");
+   														//////////////////////////////////////////////////////
+														($$) = new Eval();
+														//((Eval)$$).trueList = $2.trueList;
+														//((Eval)$$).falseList = $2.falseList;
+														((Eval)$$).returnPlace = $1.returnPlace;
+														((Eval)$$).type = "func";
+														
+														//////////////////////////////////////////////////////
+														};
  | constant {System.out.println("Rule 99 immutable : constant");
     													//////////////////////////////////////////////////////
 														$$ = new Eval();
@@ -978,16 +1448,42 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  };
  call : ID OPEN_PARANTHESIS args CLOSE_PARANTHESIS {System.out.println("Rule 100 call : ID ( args )");
      													//////////////////////////////////////////////////////
-														
-														
+														($$) = new Eval();
+														SymbolTableRecord funcRecord = searchInSTForFunc($1.place);
+														if(funcRecord == null){
+															yyerror("function " + $1.place + " has not been declared!!");
+															return -1;
+														}
+														((Eval)$$).returnPlace = funcRecord.returnPlace;
+														//System.out.println(funcRecord.returnPlace + "!#$@#%%#%!#%!#%!#%");
+														for(int i=0 ; i<$3.paramList.size() ; i++){
+															emit("ass", $3.paramList.elementAt(i), null, funcRecord.params.elementAt(i).substring(0,10));
+														}
+														emit("plus", "1", "stackPointer", "stackPointer");
+														emit("ass", "&&L"+(quadruple.size() + 2), null, "funcStack[stackPointer]");
+														emit("goto", null, null, funcRecord.value + "");
+														emit("minus", "stackPointer", "1", "stackPointer");
     													//////////////////////////////////////////////////////														
  };
- args : argList {System.out.println("Rule 101 args : argList");};
+ args : argList {System.out.println("Rule 101 args : argList");
+       													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														((Eval)$$).paramList = $1.paramList;
+      													//////////////////////////////////////////////////////														
+ };
  | {System.out.println("Rule 102 args : lamda");};
- argList : argList COMMA expression {System.out.println("Rule 103 argList : argList , expression");};
+ argList : argList COMMA expression {System.out.println("Rule 103 argList : argList , expression");
+       													//////////////////////////////////////////////////////
+														($$) = new Eval();
+														Vector<String> tmp = new Vector<String>();
+														tmp.add($3.place);
+														((Eval)$$).paramList = Eval.mergeString($1.paramList, tmp);
+      													//////////////////////////////////////////////////////														
+ };
  | expression {System.out.println("Rule 104 argList : expression");
       													//////////////////////////////////////////////////////
-														
+														($$) = new Eval();
+														((Eval)$$).paramList = Eval.makeList($1.place);
      													//////////////////////////////////////////////////////														
  };
  constant : NUMCONST {System.out.println("Rule 105 constant : NUMCONST");
@@ -1011,7 +1507,8 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														($$) = new Eval();
 														((Eval)$$).place = newTmp("char");
 														((Eval)$$).type = "char";
-														emit("ass",$1.place,null,((Eval)$$).place);
+														String place = "'" + $1.place.substring(1) + "'";
+														emit("ass",place,null,((Eval)$$).place);
   														//////////////////////////////////////////////////////
 														};
  | CHARCONST2 {System.out.println("Rule 108 constant : CHARCONST2");
@@ -1026,9 +1523,9 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
    														//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).place = newTmp("bool");
-														emit("ass","true",null,((Eval)$$).place);
+														emit("ass","1",null,((Eval)$$).place);
 														((Eval)$$).type = "bool";
-														//emit("ass","true",null,((Eval)$$).place);
+														//emit("ass","1",null,((Eval)$$).place);
 														((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														((Eval)$$).falseList = Eval.makeList(-1);
 														((Eval)$$).nextList = ((Eval)$$).trueList;
@@ -1041,7 +1538,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).place =  newTmp("bool");
-														emit("ass","false",null,((Eval)$$).place);
+														emit("ass","0",null,((Eval)$$).place);
 														((Eval)$$).type = "bool";
 														
 														((Eval)$$).falseList = Eval.makeList(quadruple.size());
@@ -1118,6 +1615,8 @@ class SymbolTableRecord{
 		public String type;
 		public String name;
 		public String value;
+		public Vector<String> params;//for function
+		public String returnPlace; //for function
 		public SymbolTableRecord(String type, String name, String value) {
 			this.type = type;
 			this.name = name;
@@ -1131,6 +1630,7 @@ class SymbolTableRecord{
 
 class ActivationRecord{
 	public String returnPlace;
+	public String returnAddress;
 	public Vector<String> params;
 	public ActivationRecord(String returnPlace, Vector<String> params){
 		this.returnPlace = returnPlace;
