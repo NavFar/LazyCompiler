@@ -270,7 +270,7 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 		boolean isDef = false;
 		for(int i=0 ; i<quadruple.size() ; i++){
 			QuadrupleRecord r = quadruple.get(i);
-			System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
+			//System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
 			isDef = false;
 			if("record".equals(r.instruction)){
 				inRecord = true;
@@ -282,7 +282,10 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 				String tmp2 = "";
 				if("bool".equals(r.firstArg)){
 					tmp2 = "int";
-				}else{tmp2 = r.firstArg;}
+				}else if("real".equals(r.firstArg)){
+					tmp2 = "float";
+				}
+				else{tmp2 = r.firstArg;}
 				
 				if(r.result == null){
 					tmp = tmp2 + " " + r.secondArg + ";" ;
@@ -290,7 +293,24 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 					tmp = tmp2 + " " + r.secondArg + "[" + r.result + "]" + ";" ;
 				}
 			}else if("ass".equals(r.instruction)){
-				tmp = r.result + " = " + r.firstArg + " ;";
+				int index1 = getIndexRanged(r.firstArg, 0, quadruple.size(), "def");
+				QuadrupleRecord qr1 = quadruple.elementAt(index1);
+				int index2 = getIndexRanged(r.result, 0, quadruple.size(), "def");
+				QuadrupleRecord qr2 = quadruple.elementAt(index2);
+				int bound;
+				int bound1 = Integer.parseInt(qr1.result);
+				int bound2 = Integer.parseInt(qr2.result);
+				if(bound1 > bound2)
+					bound = bound2;
+				else
+					bound = bound1;
+				if((qr1.result != null) && (qr2.result != null)){//array assignment
+					for(int j=0 ; j<bound ; j++){
+						tmp = tmp + r.result + "[" + j + "] = " + r.firstArg + "[" + j + "];   ";
+					}
+				}else{
+					tmp = r.result + " = " + r.firstArg + " ;";
+				}
 			}else if("goto".equals(r.instruction)){
 				String tmp2 = "L";
 				if(r.result == null){
@@ -360,7 +380,7 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 		defs = defs.replaceAll("#","");
 		code = code.replaceAll("#","");
 		code = "#include<stdio.h> \n int stackPointer = 0; \n void* funcStack[1024]; \n" + 
-				defs + "\n\n int main(){ \n\t funckStack[stackPointer] = &&L" + quadruple.size() + ";\n" + code + "L" + quadruple.size() + ":\treturn 0;\n}";
+				defs + "\n\n int main(){ \n\t funcStack[stackPointer] = &&L" + quadruple.size() + ";\n" + code + "L" + quadruple.size() + ":\treturn 0;\n}";
 		
 		System.out.println(code);
 	}
