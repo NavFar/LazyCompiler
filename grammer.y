@@ -96,6 +96,8 @@
 %type <Eval> paramList
 %type <Eval> returnStmt
 %type <Eval> W
+%type <Eval> Y
+%type <Eval> Z
 %type <Eval> call
 %type <Eval> scopedVarDeclaration
 %type <Eval> localDeclarations
@@ -293,22 +295,28 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 					tmp = tmp2 + " " + r.secondArg + "[" + r.result + "]" + ";" ;
 				}
 			}else if("ass".equals(r.instruction)){
+				boolean isDone = false;
 				int index1 = getIndexRanged(r.firstArg, 0, quadruple.size(), "def");
-				QuadrupleRecord qr1 = quadruple.elementAt(index1);
 				int index2 = getIndexRanged(r.result, 0, quadruple.size(), "def");
-				QuadrupleRecord qr2 = quadruple.elementAt(index2);
-				int bound;
-				int bound1 = Integer.parseInt(qr1.result);
-				int bound2 = Integer.parseInt(qr2.result);
-				if(bound1 > bound2)
-					bound = bound2;
-				else
-					bound = bound1;
-				if((qr1.result != null) && (qr2.result != null)){//array assignment
-					for(int j=0 ; j<bound ; j++){
-						tmp = tmp + r.result + "[" + j + "] = " + r.firstArg + "[" + j + "];   ";
+				if(index1 != -1 && index2 != -1){
+					QuadrupleRecord qr1 = quadruple.elementAt(index1);
+					QuadrupleRecord qr2 = quadruple.elementAt(index2);
+					if((qr1.result != null) && (qr2.result != null)){
+						isDone = true;
+						int bound;
+						int bound1 = Integer.parseInt(qr1.result);
+						int bound2 = Integer.parseInt(qr2.result);
+						if(bound1 > bound2)
+							bound = bound2;
+						else
+							bound = bound1;
+						//array assignment
+						for(int j=0 ; j<bound ; j++){
+							tmp = tmp + r.result + "[" + j + "] = " + r.firstArg + "[" + j + "];   ";
+						}
 					}
-				}else{
+				}
+				if(!isDone){
 					tmp = r.result + " = " + r.firstArg + " ;";
 				}
 			}else if("goto".equals(r.instruction)){
@@ -503,10 +511,10 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 	
 	int getIndexRanged(String varID, int start, int end, String instruction){
 		//System.out.println("SEARCHING:  "+ varID);
-		for(int i=0 ; i<quadruple.size() ; i++){
+		/*for(int i=0 ; i<quadruple.size() ; i++){
 			QuadrupleRecord r = quadruple.get(i);
 		System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
-		}	
+		}	*/
 		for(int i=start ; i<end ; i++){
 			if(varID.equals(quadruple.elementAt(i).secondArg) && instruction.equals(quadruple.elementAt(i).instruction)){
 				return i;
@@ -779,12 +787,6 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 	emit("goto", null, null, null);
  };
  
- /*Y : {
-	 ($$) = new Eval();
-	((Eval)$$).quad = quadruple.size();
-	emit("goto", null, null, null);
- };*/
- 
  params : paramList {System.out.println("Rule 26 params : paramList");
             											//////////////////////////////////////////////////////
 														($$) = new Eval();
@@ -924,8 +926,47 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
            												//////////////////////////////////////////////////////															
  };
  | SEMICOLON {System.out.println("Rule 47 expressionStmt : ;");};
- selectionStmt : IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement ELSE statement   {System.out.println("Rule 49 selectionStmt : IF ( simpleExpression ) statement ELSE statement");};
- |IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS statement %prec p {System.out.println("Rule 48 selectionStmt : IF ( simpleExpression ) statement");};
+ selectionStmt : IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS Y statement ELSE Z statement   {System.out.println("Rule 49 selectionStmt : IF ( simpleExpression ) statement ELSE statement");
+             											//////////////////////////////////////////////////////
+														$$ = new Eval();
+														QuadrupleRecord qr = quadruple.elementAt($5.quad);
+														qr.firstArg = $3.place;
+														quadruple.set($5.quad, qr);
+														QuadrupleRecord qr1 = quadruple.elementAt($5.quad+1);
+														qr1.result = ($8.quad+1) + "";
+														quadruple.set($5.quad+1, qr1);
+														QuadrupleRecord qr2 = quadruple.elementAt($8.quad);
+														qr2.result = quadruple.size() + "";
+														quadruple.set($8.quad, qr2);
+           												//////////////////////////////////////////////////////	
+ 
+ };
+ |IF OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS Y statement %prec p {System.out.println("Rule 48 selectionStmt : IF ( simpleExpression ) statement");
+            											//////////////////////////////////////////////////////
+														$$ = new Eval();
+														QuadrupleRecord qr = quadruple.elementAt($5.quad);
+														qr.firstArg = $3.place;
+														quadruple.set($5.quad, qr);
+														QuadrupleRecord qr1 = quadruple.elementAt($5.quad+1);
+														qr1.result = quadruple.size() + "";
+														quadruple.set($5.quad+1, qr1);
+           												//////////////////////////////////////////////////////															
+ };
+ 
+ Y : {
+	 $$ = new Eval();
+	 ((Eval)$$).quad = quadruple.size();
+	 emit("if", null, null, "" + (quadruple.size()+2));// will be backpatched
+	 emit("goto", null, null, null);
+ };
+ 
+  Z : {
+	 $$ = new Eval();
+	 ((Eval)$$).quad = quadruple.size();
+	 emit("goto", null, null, null);// will be backpatched
+ };
+
+ 
  | SWITCH OPEN_PARANTHESIS simpleExpression CLOSE_PARANTHESIS M caseElement defaultElement END {System.out.println("Rule 50 selectionStmt : SWITCH ( simpleExpression ) caseElement defaultElement END");
            												//////////////////////////////////////////////////////
 														$$ = new Eval();
@@ -1383,8 +1424,8 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
  | mutable {System.out.println("Rule 93 factor : mutable");
       													//////////////////////////////////////////////////////
 														$$ = new Eval();
-														//((Eval)$$).trueList = $1.trueList;
-														//((Eval)$$).falseList = $1.falseList;
+														((Eval)$$).trueList = $1.trueList;
+														((Eval)$$).falseList = $1.falseList;
 														((Eval)$$).place = $1.place;
 														((Eval)$$).type = $1.type;
    														//////////////////////////////////////////////////////
