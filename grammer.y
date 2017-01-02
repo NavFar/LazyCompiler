@@ -510,12 +510,15 @@ Vector<SwitchCase> cases = new Vector<SwitchCase>();
 	}
 	
 	int getIndexRanged(String varID, int start, int end, String instruction){
+		//System.out.println("!!#!!$!%!!%!!^^!^^!^"+varID);
+		if(varID == null) return -1;
 		//System.out.println("SEARCHING:  "+ varID);
 		/*for(int i=0 ; i<quadruple.size() ; i++){
 			QuadrupleRecord r = quadruple.get(i);
 		System.out.println("" + i + "\t" + r.instruction + "\t" + r.firstArg + "\t" + r.secondArg + "\t" + r.result);
 		}	*/
 		for(int i=start ; i<end ; i++){
+			if(quadruple.elementAt(i).secondArg == null) continue;
 			if(varID.equals(quadruple.elementAt(i).secondArg) && instruction.equals(quadruple.elementAt(i).instruction)){
 				return i;
 			}
@@ -1039,7 +1042,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
        													//////////////////////////////////////////////////////
 														($$) = new Eval();
 														((Eval)$$).returnPlace = $2.place;
-														
+														//System.out.println(">>>>>>>>>>>>"+$2.place);
       													//////////////////////////////////////////////////////														
  };
  breakStmt : BREAK SEMICOLON {System.out.println("Rule 58 breakStmt : break ;");
@@ -1058,8 +1061,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														backpatch($1.nextList, $3.quad);
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
-														emit("ass", $4.place, null, $1.place);
+														if($4.returnPlace != null)
+															emit("ass", $4.returnPlace, null, $1.place);
+														else
+															emit("ass", $4.place, null, $1.place);
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $4.returnPlace;
 														//////////////////////////////////////////////////////	
  };
  | mutable PLUSEQUAL M expression {System.out.println("Rule 60 expression : mutable += expression");
@@ -1072,8 +1079,13 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("plus", $4.place, $1.place, $1.place);
+														if($4.returnPlace != null)
+															emit("plus", $4.returnPlace, $1.place, $1.place);
+														else
+															emit("plus", $4.place, $1.place, $1.place);
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $4.returnPlace;
+														
 														//////////////////////////////////////////////////////	
  };
  | mutable MINUSEQUAL M expression {System.out.println("Rule 61 expression : mutable -= expression");
@@ -1086,8 +1098,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("minus", $1.place, $4.place, $1.place);
+														if($4.returnPlace != null)
+															emit("minus", $1.place, $4.returnPlace, $1.place);
+														else
+															emit("minus", $1.place, $4.place, $1.place);
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $4.returnPlace;
 														//////////////////////////////////////////////////////	
  };
  | mutable MULTIPLYEQUAL M expression {System.out.println("Rule 62 expression : mutable *= expression");
@@ -1100,8 +1116,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("mult", $4.place, $1.place, $1.place);
+														if($4.returnPlace != null)
+															emit("mult", $4.returnPlace, $1.place, $1.place);
+														else
+															emit("mult", $4.place, $1.place, $1.place);
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $4.returnPlace;
 														//////////////////////////////////////////////////////
 };
  | mutable DIVIDEQUAL M expression {System.out.println("Rule 63 expression : mutable /= expression");
@@ -1114,8 +1134,12 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														((Eval)$$).trueList = $4.trueList;
 														((Eval)$$).falseList = $4.falseList;
 														//if(symbolTable.get(getIndex($4.place)).type.equals("bool"))
-														emit("div", $1.place, $4.place, $1.place);
+														if($4.returnPlace != null)
+															emit("div", $1.place, $4.returnPlace, $1.place);
+														else
+															emit("div", $1.place, $4.place, $1.place);
 														((Eval)$$).type = $1.type;
+														((Eval)$$).returnPlace = $4.returnPlace;
 														//////////////////////////////////////////////////////
  };
  | mutable PLUSPLUS {System.out.println("Rule 64 expression : mutable ++");
@@ -1158,14 +1182,14 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
 														  backpatch($1.trueList, quadruple.size()-1);
-														  emit("ass", "1", null, ((Eval)$$).place);
-														  emit("goto", null, null, $3.quad + "");
+														  //emit("ass", "1", null, ((Eval)$$).place);
+														  //emit("goto", null, null, $3.quad + "");
 														  backpatch($1.falseList, quadruple.size()-1);														  
-														  emit("ass", "0", null, ((Eval)$$).place);
-														  emit("goto", null, null, $3.quad + "");
+														  //emit("ass", "0", null, ((Eval)$$).place);
+														  //emit("goto", null, null, $3.quad + "");
 														  backpatch($4.trueList, quadruple.size());
 														  backpatch($4.falseList, quadruple.size());
-														  emit("plus", $4.place,((Eval)$$).place,((Eval)$$).place);	 
+														  emit("plus", $4.place,$1.place,((Eval)$$).place);	 
 														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
 														  emit("if", ((Eval)$$).place, null, null);
@@ -1177,15 +1201,15 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  ($$) = new Eval();
 														  ((Eval)$$).place = newTmp("bool");
 														  ((Eval)$$).type = "bool";
-														  backpatch($1.trueList, quadruple.size()-1);
-														  emit("ass", "1", null, ((Eval)$$).place);
-														  emit("goto", null, null, $3.quad + "");
+														  backpatch($1.trueList, $3.quad + "");
+														  //emit("ass", "1", null, ((Eval)$$).place);
+														  //emit("goto", null, null, $3.quad + "");
 														  backpatch($1.falseList, quadruple.size()-1);														  
-														  emit("ass", "0", null, ((Eval)$$).place);
-														  emit("goto", null, null, $3.quad + "");
+														  //emit("ass", "0", null, ((Eval)$$).place);
+														  //emit("goto", null, null, $3.quad + "");
 														  backpatch($4.trueList, quadruple.size());
 														  backpatch($4.falseList, quadruple.size());
-														  emit("mult", $4.place,((Eval)$$).place,((Eval)$$).place);
+														  emit("mult", $4.place,$1.place,((Eval)$$).place);
 														  ((Eval)$$).trueList = Eval.makeList(quadruple.size());
 														  ((Eval)$$).falseList = Eval.makeList(quadruple.size()+1);
 														  emit("if", ((Eval)$$).place, null, null);
@@ -1221,7 +1245,7 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														  //((Eval)$$).place = newTmp("bool");
 														  //boolean result = Boolean.parseBoolean($1.place) & Boolean.parseBoolean($4.place);
 														  //emit("ass", ""+result, null, ((Eval)$$).place);
-														  //((Eval)$$).place=""+result;
+														  ((Eval)$$).place= "!"+$2.place;
 														  ((Eval)$$).type = "bool";
 														  //backpatch($1.falseList, $3.quad);
 														  //backpatch($1.trueList, $3.quad);
@@ -1517,8 +1541,10 @@ program : declarationList {System.out.println("Rule 1 program : declarationList"
 														}
 														((Eval)$$).returnPlace = funcRecord.returnPlace;
 														//System.out.println(funcRecord.returnPlace + "!#$@#%%#%!#%!#%!#%");
-														for(int i=0 ; i<$3.paramList.size() ; i++){
-															emit("ass", $3.paramList.elementAt(i), null, funcRecord.params.elementAt(i).substring(0,10));
+														if($3.paramList != null){
+															for(int i=0 ; i<$3.paramList.size() ; i++){
+																emit("ass", $3.paramList.elementAt(i), null, funcRecord.params.elementAt(i).substring(0,10));
+															}
 														}
 														emit("plus", "1", "stackPointer", "stackPointer");
 														emit("ass", "&&L"+(quadruple.size() + 2), null, "funcStack[stackPointer]");
